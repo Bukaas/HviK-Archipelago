@@ -1,0 +1,11 @@
+# HviK-Vorlage für Factorio (Archipelago 0.6.7)
+# Eine Fabrik = eine YAML. Spielt ihr zu zweit in einer Fabrik, reicht EINE Datei.
+# Alles, was hier nicht steht, bleibt auf Standard.
+# Mehr Optionen: https://archipelago.gg/games/Factorio/player-options
+
+name: {{NAME}}
+game: Factorio
+description: HviK-Vorlage Factorio
+
+Factorio:
+  death_link: 'false'

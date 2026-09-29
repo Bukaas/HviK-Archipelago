@@ -1,0 +1,5 @@
+packages/**/*.zip
+*.sfc
+*.smc
+*.apsave
+*_Spoiler.txt

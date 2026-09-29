@@ -1,0 +1,32 @@
+# HviK-Vorlage für Super Mario World (Archipelago 0.6.7)
+# Alles, was hier nicht steht, bleibt auf Standard.
+# Mehr Optionen: https://archipelago.gg/games/Super%20Mario%20World/player-options
+
+name: {{NAME}}
+game: Super Mario World
+description: HviK-Vorlage Super Mario World
+
+Super Mario World:
+  # Ziel: 7 Bosse besiegen, dann Bowser
+  goal: bowser
+  bosses_required: 7
+
+  # Klettern kommt früh - sonst hängt man am Anfang oft fest
+  early_climb: 'true'
+
+  # Mehr Checks (Drachenmünzen, Monde, Blöcke) - aus = kürzere Runde
+  dragon_coin_checks: 'false'
+  moon_checks: 'false'
+  bonus_block_checks: 'false'
+  blocksanity: 'false'
+
+  level_shuffle: 'false'
+
+  # Mit anderen Spielern mitsterben usw. - nur an, wenn alle es wollen
+  death_link: 'false'
+  ring_link: 'false'
+  trap_link: 'false'
+
+  trap_fill_percentage: '0'
+  autosave: 'true'
+  overworld_speed: fast
