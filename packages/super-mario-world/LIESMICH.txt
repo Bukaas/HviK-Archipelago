@@ -1,21 +1,26 @@
 HviK Archipelago - Super Mario World
 ====================================
 
-So geht's:
-  1. Einmalig: Archipelago installieren (START.bat oeffnet sonst die Download-Seite).
-  2. START.bat doppelklicken.
-     Beim allerersten Mal fragt Archipelago nach deiner ROM:
-     "Super Mario World (USA)" (.sfc) auswaehlen. Die ROM ist nicht im Paket.
-  3. SNI Client und Spiel gehen auf und verbinden sich von selbst.
+EINMALIG (vor dem Spieltag):
+  1. Diesen Ordner an einen festen Platz legen (z.B. Dokumente).
+  2. EINRICHTEN.bat doppelklicken.
+     - Ist Archipelago noch nicht installiert, oeffnet sich die Download-Seite:
+       installieren und EINRICHTEN.bat nochmal starten.
+     - Danach weiss Archipelago, dass es den Emulator aus diesem Ordner nehmen soll.
+
+AM SPIELTAG:
+  Auf hvik.org in der Runde deine Patch-Datei (.apsmw) herunterladen
+  und doppelklicken. Fertig - Spiel startet und verbindet sich von selbst.
+  Beim allerersten Mal fragt Archipelago nach deiner ROM:
+  "Super Mario World (USA)" (.sfc) auswaehlen. Die ROM ist nicht im Paket.
+
+  (Hast du das Komplettpaket einer Runde geladen, geht auch: START.bat.)
 
 Steuerung: Die Tasten siehst und aenderst du im Emulator unter
 Input -> Input Configuration (Joypad #1).
-Mit Controller: dort einfach die Knoepfe neu zuweisen (Steam vorher schliessen).
+Mit Controller: dort die Knoepfe neu zuweisen (Steam vorher schliessen).
 
 Der Emulator ist snes9x-nwa (verbindet sich ohne Lua-Skript mit Archipelago).
 Snes9x-Lizenz: siehe snes9x\LICENSE.
-
-Im Ordner "deine-runde" liegen deine Patch-Datei und die Server-Adresse
-- die kommen mit dem Download von hvik.org. Naechste Runde = neues Paket laden.
 
 Hilfe & Anleitung: https://hvik.org/events/archipelago/super-mario-world
