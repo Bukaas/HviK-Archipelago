@@ -31,9 +31,14 @@ GAMES = {
     ]),
     "vampire": ("HviK-VampireSurvivors", "Vampire Survivors", [
         "Archipelago brauchst du NICHT. EINRICHTEN.bat installiert .NET 6, MelonLoader und den Mod.",
-        "Die normale, aktuelle Steam-Version reicht - Downpatchen ist seit Mod v0.3 nicht mehr noetig.",
-        "Kein Verbindungsfeld oben links? Dann gab es evtl. ein neues Spiel-Update, zu dem der Mod",
-        "noch nicht passt - dann beim Host melden.",
+        "",
+        "SPIELVERSION: Der Mod laeuft (Stand Sep. 2026) noch nicht mit Vampire Survivors 1.16.",
+        "EINRICHTEN.bat setzt das Spiel deshalb auf 1.15.114 zurueck. Dafuer geht einmal die",
+        "Steam-Konsole auf - der Befehl ist schon kopiert: unten reinklicken, Strg+V, Enter,",
+        "warten bis 'Depot download complete' da steht, dann im EINRICHTEN-Fenster Enter.",
+        "Hat Steam das Spiel spaeter wieder aktualisiert, merkt START.bat das und setzt es",
+        "automatisch wieder zurueck (ohne neuen Download).",
+        "Normal ohne Mod spielen: im Spielordner version.dll in version.dll.aus umbenennen.",
     ]),
 }
 
@@ -99,8 +104,8 @@ def build():
         }
         for name, text in EXTRA_FILES.get(key, {}).items():
             files[name] = crlf(text)
-        for s in ("einrichten", "start"):
-            files[f"tools/{s}.ps1"] = crlf((HERE / key / "tools" / f"{s}.ps1").read_text(encoding="utf-8"))
+        for f in sorted((HERE / key / "tools").glob("*.ps1")):
+            files[f"tools/{f.name}"] = crlf(f.read_text(encoding="utf-8"))
         zpath = OUT / f"{folder}-Starter.zip"
         with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
             for name, data in files.items():
