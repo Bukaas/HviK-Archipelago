@@ -121,6 +121,15 @@ GAMES = {
         "Der Mod ist noch Alpha - Fehler bitte dem Host melden.",
         "Mods wieder aus: im Spielordner winhttp.dll loeschen.",
     ]),
+    "kh3": ("HviK-KingdomHearts3", "Kingdom Hearts III", [
+        "Du brauchst: Kingdom Hearts III + Re Mind (Steam oder Epic) und Archipelago 0.6.7.",
+        "EINRICHTEN.bat installiert den KH3-Client (kh3.apworld 0.16.11 von ap.aesais.net) und oeffnet ihn:",
+        "dort EINMAL Reiter 'KH3 Config' -> 'Patch Game' klicken (installiert Garden of Assemblage + Mod-Loader).",
+        "",
+        "Am Spieltag: START.bat - der Client verbindet sich selbst und baut deine Seed-Datei,",
+        "dann 'Launch KH3' im Client und einen NEUEN Spielstand beginnen.",
+        "KH3 AP ist noch Alpha - Fehler bitte dem Host melden.",
+    ]),
     "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
         "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
         "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
