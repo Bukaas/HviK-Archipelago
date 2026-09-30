@@ -30,6 +30,15 @@ if (-not (Test-Path (Join-Path $biz "EmuHawk.exe"))) {
     Expand-Zip $z $biz
 }
 if (-not (Test-Path (Join-Path $biz "EmuHawk.exe"))) { Fail "BizHawk konnte nicht entpackt werden - beim Host melden." }
+# BizHawk 2.9.1 braucht die Microsoft Visual C++ 2010 SP1 Runtime (x64) - fehlt auf neuen PCs oft
+if (-not (Test-Path (Join-Path $env:SystemRoot "System32\msvcr100.dll"))) {
+    $vc = Get-File "https://download.microsoft.com/download/1/6/5/165255E7-1014-4D0A-B094-B6A430A6BFFC/vcredist_x64.exe" "vcredist2010_x64.exe"
+    Say "Installiere Microsoft Visual C++ 2010 (x64) fuer BizHawk (Windows fragt evtl. nach Erlaubnis) ..."
+    $p = Start-Process $vc -ArgumentList "/q", "/norestart" -Verb RunAs -Wait -PassThru
+    # 3010 = Neustart empfohlen, 1638 = neuere Version schon da
+    if ($p.ExitCode -notin 0, 3010, 1638) { Fail "Visual C++ 2010 konnte nicht installiert werden (Code $($p.ExitCode))." }
+    Ok "Visual C++ 2010 installiert."
+}
 if ($oldBiz -and (Test-Path (Join-Path $oldBiz "N64\SaveRAM"))) {
     New-Item -ItemType Directory -Force (Join-Path $biz "N64") | Out-Null
     Copy-Item (Join-Path $oldBiz "N64\SaveRAM") (Join-Path $biz "N64") -Recurse -Force
