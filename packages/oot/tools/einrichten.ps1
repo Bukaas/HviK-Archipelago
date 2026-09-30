@@ -54,9 +54,28 @@ if (-not (Test-Path $cfg)) {
 Ok "BizHawk liegt in $biz"
 
 Say "[3/4] Starter fuer Archipelago ..."
-# Archipelago ruft rom_start mit der gepatchten ROM als einzigem Argument auf -> diese .bat haengt das Lua-Skript an.
+# connector_oot.lua liest die Randomizer-Adresse nur EINMAL beim Laden. Beim BizHawk-Start ist der Spielspeicher
+# noch leer -> es liest dann fuer immer falsche Stellen (Warnungsflut, Ruckeln, keine Anmeldung).
+# Deshalb ein kleiner Lader, der wartet, bis das Spiel laeuft. Er muss neben connector_oot.lua liegen,
+# weil dessen socket.lua die Hilfs-DLL ueber den aktuellen Ordner sucht.
+$loader = Join-Path (Split-Path $lua) "hvik_oot_loader.lua"
+$loaderCode = @'
+-- HviK Archipelago: wartet, bis Ocarina of Time wirklich laeuft, dann connector_oot.lua starten.
+-- (connector_oot.lua liest die Randomizer-Adresse nur einmal beim Laden - zu frueh geladen liest es fuer immer falsch.)
+local function ready()
+  local p = mainmemory.read_u32_be(0x1C6E90 + 0x15D4)
+  return p >= 0x80000000 and p < 0x80800000
+end
+console.log("HviK: warte, bis das Spiel laeuft ...")
+while not ready() do emu.frameadvance() end
+for i = 1, 120 do emu.frameadvance() end
+console.log("HviK: starte connector_oot.lua")
+dofile("connector_oot.lua")
+'@
+[IO.File]::WriteAllText($loader, $loaderCode.Replace("`r`n", "`n"), (New-Object Text.UTF8Encoding $false))
+# Archipelago ruft rom_start mit der gepatchten ROM als einzigem Argument auf -> diese .bat haengt den Lader an.
 $starter = Join-Path $biz "hvik-oot-start.bat"
-$bat = "@echo off`r`nstart `"`" `"$biz\EmuHawk.exe`" --lua=`"$lua`" `"%~1`"`r`n"
+$bat = "@echo off`r`nstart `"`" `"$biz\EmuHawk.exe`" --lua=`"$loader`" `"%~1`"`r`n"
 [IO.File]::WriteAllText($starter, $bat, (New-Object Text.ASCIIEncoding))
 Ok "Starter: $starter"
 
