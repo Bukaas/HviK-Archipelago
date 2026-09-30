@@ -46,8 +46,9 @@ GAMES = {
     "sm64": ("HviK-SuperMario64", "Super Mario 64", [
         "Du brauchst eine eigene Super Mario 64 ROM: USA oder Japan, als .z64 (EU geht nicht).",
         "Die ROM ist nicht im Paket. Archipelago brauchst du NICHT.",
-        "Einmalig baut der SM64AP-Launcher daraus das PC-Spiel. Beim ersten Mal installiert er",
-        "dafuer Werkzeuge (MSYS2) - das dauert 10-30 Minuten, einfach laufen lassen.",
+        "EINRICHTEN.bat installiert MSYS2 (Werkzeuge, C:\msys64) und oeffnet den SM64AP-Launcher.",
+        "Dort: Compile default SM64AP build -> Browse -> C:\SM64AP (Ordner OHNE Leerzeichen!)",
+        "-> Name -> Download Files -> Create Build. Das dauert beim ersten Mal 10-30 Minuten.",
         "Danach: START.bat -> im Launcher Name + Adresse eintragen -> Play.",
     ]),
     "tp": ("HviK-TwilightPrincess", "Zelda: Twilight Princess", [
@@ -99,6 +100,16 @@ GAMES = {
         "Am Spieltag: START.bat -> Spiel + DSAP-Client starten -> im Client Menue (drei Striche):",
         "Host hvik.org:38281, Slot = dein Name -> Connect -> mit RECHTSklick zurueck ins Spiel.",
         "Den DSAP-Client die ganze Zeit offen lassen.",
+    ]),
+    "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
+        "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
+        "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
+        "und traegt Server hvik.org, Port 38281 und deinen Namen in den Mod ein.",
+        "",
+        "Am Spieltag: START.bat -> Singleplayer -> in der Lobby 'Connect to AP' klicken.",
+        "Stehen die Felder leer: Konsole (Strg+Alt+^) -> archipelago hvik.org 38281 DeinName",
+        "Mods wieder aus: im Spielordner winhttp.dll loeschen.",
+        "Wer r2modman schon nutzt, kann auch dort den Mod 'Archipelago' (ArchipelagoMW) nehmen.",
     ]),
     "vampire": ("HviK-VampireSurvivors", "Vampire Survivors", [
         "Archipelago brauchst du NICHT.",
