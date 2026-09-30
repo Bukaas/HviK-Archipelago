@@ -29,6 +29,27 @@ GAMES = {
         "Installiert BepInEx, PluginConfigurator und den Archipelago-Mod direkt ins Spiel.",
         "Mod aus: im Spielordner winhttp.dll loeschen.",
     ]),
+    "terraria": ("HviK-Terraria", "Terraria", [
+        "Du brauchst Terraria und tModLoader (kostenlos in Steam). Archipelago brauchst du NICHT.",
+        "EINRICHTEN.bat oeffnet die Workshop-Seite des Mods - dort einmal 'Abonnieren' klicken.",
+        "Name, Adresse und Port traegt das Paket in die Mod-Einstellungen ein:",
+        "der Mod verbindet sich beim Betreten der Welt von selbst.",
+        "Fuer jede neue Runde eine NEUE Welt anlegen.",
+        "Chat-Befehle: /ap !hint Itemname   -   Verbindung neu: /apconnect",
+    ]),
+    "raft": ("HviK-Raft", "Raft", [
+        "Archipelago brauchst du NICHT. Installiert werden: Raft Mod Loader, ModUtils, Raftipelago.",
+        "Im Spiel jedes Mal: F9 -> Mod manager -> ZUERST ModUtils laden (Stecker-Symbol),",
+        "DANN Raftipelago (Raftipelago nicht 'beim Start laden' lassen).",
+        "Verbinden: F10 -> Konsole -> Strg+V, Enter (START.bat kopiert den Befehl).",
+    ]),
+    "sm64": ("HviK-SuperMario64", "Super Mario 64", [
+        "Du brauchst eine eigene Super Mario 64 ROM: USA oder Japan, als .z64 (EU geht nicht).",
+        "Die ROM ist nicht im Paket. Archipelago brauchst du NICHT.",
+        "Einmalig baut der SM64AP-Launcher daraus das PC-Spiel. Beim ersten Mal installiert er",
+        "dafuer Werkzeuge (MSYS2) - das dauert 10-30 Minuten, einfach laufen lassen.",
+        "Danach: START.bat -> im Launcher Name + Adresse eintragen -> Play.",
+    ]),
     "vampire": ("HviK-VampireSurvivors", "Vampire Survivors", [
         "Archipelago brauchst du NICHT.",
         "",
