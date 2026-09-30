@@ -46,9 +46,16 @@ GAMES = {
         "Hast du schon den Installer aus dem Archipelago-Discord benutzt",
         "(C:\\ProgramData\\Archipelago\\Vampire Survivors AP)? Dann wird diese Kopie genommen.",
         "",
+        "LOBBY: Bei Vampire Survivors kreuzt du an, welche Charaktere und Stages du im",
+        "normalen Spiel schon freigeschaltet hast. Das geht automatisch: FREISCHALTUNGEN.bat",
+        "doppelklicken (liest deinen Spielstand) -> in der Lobby 'Aus Zwischenablage uebernehmen'.",
+        "",
         "Starten: START.bat oder die Desktop-Verknuepfung 'Vampire Survivors AP'.",
         "NICHT das normale Spiel in Steam starten - das ist die neue Version ohne Mod.",
         "Der erste Start dauert ein paar Minuten (MelonLoader richtet sich ein).",
+        "",
+        "WICHTIG im Spiel: START -> Charakter ANKLICKEN (nicht nur 'weiter' druecken),",
+        "sonst stuerzt das Spiel beim Laden des Runs ab.",
         "",
         "Danke an die VS-Archipelago-Community: Der Weg folgt dem Installer",
         "takacomic/VSModdedScript (Pins im Archipelago-Discord).",
@@ -60,6 +67,11 @@ PRE = {}
 
 # Zusaetzliche Dateien je Paket (Name -> Inhalt)
 EXTRA_FILES = {}
+
+# Zusaetzliche .bat-Dateien je Paket: (Dateiname, Kopfzeile, Skript in tools/)
+EXTRA_BATS = {
+    "vampire": [("FREISCHALTUNGEN.bat", "Freischaltungen aus dem Spielstand lesen", "freischaltungen")],
+}
 
 BAT = """@echo off
 rem HviK Archipelago - {game}: {what}
@@ -115,6 +127,8 @@ def build():
                 pre="".join("\n" + l for l in PRE.get(key, [])) + ("\n" if key in PRE else ""))),
             "tools/hvik.ps1": crlf(common),
         }
+        for name, headline, script in EXTRA_BATS.get(key, []):
+            files[name] = crlf(BAT.format(game=game, what=headline, headline=headline, script=script))
         for name, text in EXTRA_FILES.get(key, {}).items():
             files[name] = crlf(text)
         for f in sorted((HERE / key / "tools").glob("*.ps1")):

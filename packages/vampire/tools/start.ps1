@@ -17,5 +17,5 @@ Write-Host ""
 Ok "Vampire Survivors AP ($VS_VERSION) startet. Oben links auf dem Titelbildschirm eintragen:"
 Say "    Adresse: $($HviK.Server)   (schon kopiert - Strg+V)" White
 Say "    Name:    $name" White
-Say "Dann verbinden und losspielen."
+Say "Dann verbinden -> START -> Charakter ANKLICKEN (nicht nur weiter druecken!) -> Stage -> los."
 Say "Kein Verbindungsfeld? Die Datei 'Vampire Survivors AP\MelonLoader\Latest.log' an den Host schicken." Yellow
