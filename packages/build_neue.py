@@ -64,6 +64,18 @@ GAMES = {
         "Die Speicherstaende (gci/) stammen aus dem Twilight-Princess-Channel im Archipelago-Discord",
         "(apworld: github.com/WritingHusky/Twilight_Princess_apworld, Randomizer: tprandomizer.com).",
     ]),
+    "minecraft": ("HviK-Minecraft", "Minecraft", [
+        "Du brauchst: Minecraft Java Edition (Version 26.2) und Archipelago 0.6.7.",
+        "EINRICHTEN.bat installiert minecraft.apworld v2.2.1 (NeoForgeAP) - dieselbe Version",
+        "wie auf dem HviK-Server - und verknuepft .apmc-Dateien mit Archipelago.",
+        "",
+        "Pro Runde gibt es eine eigene .apmc-Datei (auf hvik.org bei 'Deine Datei').",
+        "Doppelklick darauf startet den Minecraft Client = dein eigener Minecraft-Server.",
+        "Der Client installiert beim ersten Mal Java, NeoForge und den Mod selbst (immer JA).",
+        "Das Client-Fenster waehrend des Spielens OFFEN lassen.",
+        "In Minecraft: Mehrspieler -> Direktverbindung -> localhost",
+        "Im Chat: /connect hvik.org 38281   und dann   /start",
+    ]),
     "vampire": ("HviK-VampireSurvivors", "Vampire Survivors", [
         "Archipelago brauchst du NICHT.",
         "",
