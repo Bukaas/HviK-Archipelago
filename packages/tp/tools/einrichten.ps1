@@ -25,7 +25,16 @@ if (-not (Test-Path (Join-Path $TP_DOLPHIN "Dolphin.exe"))) {
     Say "Lade Dolphin 2609 ..."
     try { Invoke-WebRequest -Uri $TP_DOLPHIN_URL -OutFile $out -UseBasicParsing -UserAgent "Mozilla/5.0" }
     catch { Fail "Dolphin-Download fehlgeschlagen. Internet da? Sonst beim Host melden." }
-    & tar -xf $out -C $HviK.Root
+    # Windows 11 kann .7z mit dem eingebauten tar entpacken, Windows 10 nicht (kein LZMA) ->
+    # dann das offizielle Mini-Entpackprogramm 7zr.exe von 7-zip.org nehmen.
+    try { & tar -xf $out -C $HviK.Root 2>$null } catch { }
+    if (-not (Test-Path (Join-Path $TP_DOLPHIN "Dolphin.exe"))) {
+        Say "Windows kann das nicht selbst entpacken - nehme 7-Zip (7zr.exe) ..."
+        $sevenZip = Join-Path $env:TEMP "hvik-archipelago\7zr.exe"
+        try { Invoke-WebRequest -Uri "https://www.7-zip.org/a/7zr.exe" -OutFile $sevenZip -UseBasicParsing -UserAgent "Mozilla/5.0" }
+        catch { Fail "7-Zip-Download fehlgeschlagen. Internet da? Sonst beim Host melden." }
+        & $sevenZip x $out "-o$($HviK.Root)" -y | Out-Null
+    }
     if (-not (Test-Path (Join-Path $TP_DOLPHIN "Dolphin.exe"))) { Fail "Dolphin konnte nicht entpackt werden - beim Host melden." }
 }
 # portable.txt: Dolphin nimmt seine Einstellungen aus Dolphin-x64\User statt aus dem Benutzerprofil
