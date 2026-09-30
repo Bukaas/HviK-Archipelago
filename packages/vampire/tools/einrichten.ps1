@@ -3,6 +3,8 @@
 # Das Downpatchen (Spielversion vor 1.15) geht NICHT automatisch - siehe LIESMICH.txt.
 . "$PSScriptRoot\hvik.ps1"
 
+Say "Schon heruntergepatcht (Spielversion vor 1.15)? Sonst ZUERST die Schritte in LIESMICH.txt!" Yellow
+Write-Host ""
 Say "[1/4] Vampire Survivors suchen ..."
 $game = Find-SteamGame 1794680
 if (-not $game) { Fail "Vampire Survivors ist nicht installiert (Steam). Bitte erst installieren." }

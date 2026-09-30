@@ -30,13 +30,54 @@ GAMES = {
         "Mod aus: im Spielordner winhttp.dll loeschen.",
     ]),
     "vampire": ("HviK-VampireSurvivors", "Vampire Survivors", [
-        "Archipelago brauchst du NICHT. Installiert .NET 6, MelonLoader und den Mod.",
-        "",
-        "ACHTUNG: Der Mod laeuft (Stand jetzt) nicht mit Spielversion 1.15 oder neuer.",
-        "Das Zuruecksetzen ('Downpatchen') geht leider nicht automatisch - die Anleitung",
-        "steht angepinnt im Vampire-Survivors-Channel im Archipelago-Discord:",
-        "https://discord.gg/8Z65BR2  (oder frag den Host)",
+        "Archipelago brauchst du NICHT. EINRICHTEN.bat installiert .NET 6, MelonLoader und den Mod.",
     ]),
+}
+
+# Text VOR "EINMALIG" in der LIESMICH (z. B. Downpatchen)
+PRE = {
+    "vampire": [
+        "!!! VORHER: SPIEL AUF EINE AELTERE VERSION ZURUECKSETZEN (\"DOWNPATCHEN\") !!!",
+        "Der Mod laeuft (Stand jetzt) NICHT mit Spielversion 1.15 oder neuer.",
+        "Steam hat dir automatisch die neueste Version installiert - die musst du einmal",
+        "gegen eine aeltere tauschen. Das geht so:",
+        "",
+        "  1. Die Nummern holen: Im Archipelago-Discord (https://discord.gg/8Z65BR2)",
+        "     in den Channel 'Vampire Survivors' gehen und oben rechts auf die",
+        "     Stecknadel (angepinnte Nachrichten) klicken. Dort steht ein Befehl wie:",
+        "         download_depot 1794680 1794681 1234567890123456789",
+        "     (die Zahlen hier sind nur ein Beispiel!) - oder frag den Host.",
+        "",
+        "  2. Steam-Konsole oeffnen: STEAM-KONSOLE.bat doppelklicken.",
+        "     (Oder: Windows-Taste + R -> steam://open/console eintippen -> Enter.)",
+        "     Steam geht auf, oben erscheint der Reiter 'Konsole' mit einer",
+        "     Eingabezeile ganz unten.",
+        "",
+        "  3. Den Befehl aus dem Discord unten in die Eingabezeile kopieren -> Enter.",
+        "     Steam laedt jetzt die alte Version. Das dauert etwas - am Ende steht",
+        "     'Depot download complete' und ein Ordner, meistens:",
+        "         C:\\Program Files (x86)\\Steam\\steamapps\\content\\app_1794680\\depot_...",
+        "",
+        "  4. Diesen Ordner oeffnen, ALLES darin kopieren und in den Spielordner",
+        "     einfuegen (\"Dateien ersetzen\"):",
+        "         C:\\Program Files (x86)\\Steam\\steamapps\\common\\Vampire Survivors",
+        "     (Spielordner finden: in Steam Rechtsklick auf das Spiel -> Verwalten ->",
+        "      Lokale Dateien durchsuchen.)",
+        "",
+        "  5. Jetzt erst EINRICHTEN.bat doppelklicken.",
+        "",
+        "Damit Steam das Spiel nicht wieder hochpatcht: immer ueber START.bat starten",
+        "(das startet das Spiel direkt, ohne Steam-Update). In Steam unter",
+        "Eigenschaften -> Updates 'Nur beim Start aktualisieren' waehlen.",
+        "Kommt doch ein Update: Schritte 2-4 wiederholen.",
+    ],
+}
+
+# Zusaetzliche Dateien je Paket (Name -> Inhalt)
+EXTRA_FILES = {
+    "vampire": {
+        "STEAM-KONSOLE.bat": "@echo off\nrem Oeffnet die Steam-Konsole (fuer das Downpatchen, siehe LIESMICH.txt).\nstart \"\" \"steam://open/console\"\n",
+    },
 }
 
 BAT = """@echo off
@@ -56,7 +97,7 @@ pause
 
 README = """HviK Archipelago - {game}
 {line}
-
+{pre}
 EINMALIG (vor dem Spieltag):
   1. Diesen Ordner an einen festen Platz legen (z.B. Dokumente).
   2. EINRICHTEN.bat doppelklicken.
@@ -88,9 +129,13 @@ def build():
         files = {
             "EINRICHTEN.bat": crlf(BAT.format(game=game, what="einmalig einrichten", headline="Einmalige Einrichtung", script="einrichten")),
             "START.bat": crlf(BAT.format(game=game, what="am Spieltag starten", headline="Spiel starten", script="start")),
-            "LIESMICH.txt": crlf(README.format(game=game, line="=" * (len(game) + 18), extra="\n".join(extra))),
+            "LIESMICH.txt": crlf(README.format(
+                game=game, line="=" * (len(game) + 19), extra="\n".join(extra),
+                pre="".join("\n" + l for l in PRE.get(key, [])) + ("\n" if key in PRE else ""))),
             "tools/hvik.ps1": crlf(common),
         }
+        for name, text in EXTRA_FILES.get(key, {}).items():
+            files[name] = crlf(text)
         for s in ("einrichten", "start"):
             files[f"tools/{s}.ps1"] = crlf((HERE / key / "tools" / f"{s}.ps1").read_text(encoding="utf-8"))
         zpath = OUT / f"{folder}-Starter.zip"
