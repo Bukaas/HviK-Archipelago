@@ -76,6 +76,18 @@ GAMES = {
         "In Minecraft: Mehrspieler -> Direktverbindung -> localhost",
         "Im Chat: /connect hvik.org 38281   und dann   /start",
     ]),
+    "oot": ("HviK-OcarinaOfTime", "Zelda: Ocarina of Time", [
+        "Du brauchst: Archipelago 0.6.7 und deine eigene ROM: Ocarina of Time (USA) Version 1.0,",
+        "als .z64 oder .n64 (nicht 1.1/1.2, nicht die GameCube-Fassung). Die ROM ist nicht im Paket.",
+        "EINRICHTEN.bat laedt BizHawk 2.10 in diesen Ordner und stellt Archipelago so ein, dass es nach",
+        "dem Patchen BizHawk direkt mit dem Verbindungs-Skript (connector_oot.lua) startet.",
+        "",
+        "Pro Runde gibt es eine eigene .apz5-Datei (auf hvik.org bei 'Deine Datei').",
+        "Doppelklick darauf (oder START.bat) -> ROM wird gepatcht -> BizHawk startet.",
+        "Im OoT Client oben hvik.org:38281 eintragen -> Connect (START.bat erledigt das schon).",
+        "Tipp aus der Anleitung: in BizHawk unter Config -> Hotkeys die meisten Tasten mit Esc",
+        "abschalten, damit du nicht aus Versehen Savestates o.ae. ausloest.",
+    ]),
     "vampire": ("HviK-VampireSurvivors", "Vampire Survivors", [
         "Archipelago brauchst du NICHT.",
         "",
