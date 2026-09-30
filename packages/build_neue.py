@@ -50,6 +50,20 @@ GAMES = {
         "dafuer Werkzeuge (MSYS2) - das dauert 10-30 Minuten, einfach laufen lassen.",
         "Danach: START.bat -> im Launcher Name + Adresse eintragen -> Play.",
     ]),
+    "tp": ("HviK-TwilightPrincess", "Zelda: Twilight Princess", [
+        "Du brauchst: Archipelago 0.6.7 und deine eigene Twilight Princess ISO (GameCube; USA, Europa oder Japan).",
+        "Das Paket NICHT in einen OneDrive-Ordner legen (sonst findet der Client Dolphin nicht).",
+        "EINRICHTEN.bat installiert den Twilight-Princess-Client (apworld v0.3.0) in Archipelago,",
+        "legt Dolphin 2609 in diesen Ordner (eigene Einstellungen, deine andere Dolphin-Installation",
+        "bleibt unberuehrt) und kopiert die drei Speicherstaende in Speicherkarte A.",
+        "",
+        "Im Spiel: Speicherstand 3 'REL Loader' starten (nur EINMAL pro Dolphin-Sitzung!),",
+        "neues Spiel, warten bis du Link steuerst, im Client /name DeinName, dann verbinden.",
+        "Alle fremden Items sehen im Spiel aus wie gruene Rubine - das ist normal.",
+        "",
+        "Die Speicherstaende (gci/) stammen aus dem Twilight-Princess-Channel im Archipelago-Discord",
+        "(apworld: github.com/WritingHusky/Twilight_Princess_apworld, Randomizer: tprandomizer.com).",
+    ]),
     "vampire": ("HviK-VampireSurvivors", "Vampire Survivors", [
         "Archipelago brauchst du NICHT.",
         "",
@@ -154,6 +168,11 @@ def build():
             files[name] = crlf(text)
         for f in sorted((HERE / key / "tools").glob("*.ps1")):
             files[f"tools/{f.name}"] = crlf(f.read_text(encoding="utf-8"))
+        # Beiliegende Dateien (z. B. TP-Speicherstaende in gci/) unveraendert mitnehmen
+        extra = HERE / key / "files"
+        if extra.is_dir():
+            for f in sorted(p for p in extra.rglob("*") if p.is_file()):
+                files[f.relative_to(extra).as_posix()] = f.read_bytes()
         zpath = OUT / f"{folder}-Starter.zip"
         with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
             for name, data in files.items():
