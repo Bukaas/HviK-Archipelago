@@ -101,6 +101,17 @@ GAMES = {
         "Host hvik.org:38281, Slot = dein Name -> Connect -> mit RECHTSklick zurueck ins Spiel.",
         "Den DSAP-Client die ganze Zeit offen lassen.",
     ]),
+    "rac3": ("HviK-RatchetClank3", "Ratchet and Clank 3", [
+        "Du brauchst: Archipelago 0.6.7, dein eigenes PS2-BIOS und deine eigene",
+        "Ratchet & Clank 3 ISO (US SCUS-97353 oder EU SCES-52456) - die duerfen wir nicht verteilen.",
+        "Das Paket NICHT in einen OneDrive-Ordner legen.",
+        "EINRICHTEN.bat installiert den RaC3-Client (rac3.apworld v0.6.0) in Archipelago,",
+        "legt PCSX2 2.8.2 in diesen Ordner (eigene Einstellungen, eine andere PCSX2-Installation",
+        "bleibt unberuehrt), schaltet PINE ein (Slot 28011) und fragt einmal nach BIOS und ISO.",
+        "",
+        "Am Spieltag: START.bat -> im Launcher 'Ratchet and Clank 3 Client' -> Strg+V -> Connect",
+        "-> Name eingeben -> im Spiel neuen Spielstand beginnen.",
+    ]),
     "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
         "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
         "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
