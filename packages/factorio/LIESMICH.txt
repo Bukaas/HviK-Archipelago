@@ -1,0 +1,17 @@
+HviK Archipelago - Factorio
+===========================
+
+So geht's:
+  1. Factorio muss installiert sein (Steam). Einmal normal gestartet haben.
+  2. START.bat doppelklicken:
+     - installiert den Mod dieser Runde
+     - schaltet Space Age, Quality und Elevated Rails aus
+     - startet Factorio und verbindet direkt mit deiner Fabrik
+       (Steam fragt evtl. nach - einfach bestaetigen)
+
+Nach der Runde: "DLC wieder an.bat" doppelklicken, dann ist alles wieder normal.
+
+Im Ordner "deine-runde" liegen der Mod und die Adresse deiner Fabrik
+- die kommen mit dem Download von hvik.org. Naechste Runde = neues Paket laden.
+
+Hilfe & Anleitung: https://hvik.org/events/archipelago/factorio
