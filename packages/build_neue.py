@@ -112,6 +112,15 @@ GAMES = {
         "Am Spieltag: START.bat -> im Launcher 'Ratchet and Clank 3 Client' -> Strg+V -> Connect",
         "-> Name eingeben -> im Spiel neuen Spielstand beginnen.",
     ]),
+    "cuphead": ("HviK-Cuphead", "Cuphead", [
+        "Archipelago brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
+        "BepInEx 5.4.23.5 und den CupheadArchipelago-Mod alpha04a.3 (github.com/JKLeckr).",
+        "",
+        "Am Spieltag: START.bat -> leeren Speicherplatz waehlen -> Archipelago-Menue (Tastatur C+Z)",
+        "-> Enabled an, Address hvik.org, Port 38281, Player = dein Name -> Speicherplatz starten.",
+        "Der Mod ist noch Alpha - Fehler bitte dem Host melden.",
+        "Mods wieder aus: im Spielordner winhttp.dll loeschen.",
+    ]),
     "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
         "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
         "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
