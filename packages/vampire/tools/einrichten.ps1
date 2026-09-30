@@ -1,10 +1,8 @@
 # HviK Archipelago - Vampire Survivors einmalig einrichten:
 # .NET 6 + MelonLoader 0.7.2 + ArchipelagoSurvivors v0.3.5.1 (passend zum HviK-Server) in den Spielordner.
-# Das Downpatchen (Spielversion vor 1.15) geht NICHT automatisch - siehe LIESMICH.txt.
+# Downpatchen ist seit ArchipelagoSurvivors v0.3 nicht mehr noetig - die aktuelle Steam-Version passt.
 . "$PSScriptRoot\hvik.ps1"
 
-Say "Schon heruntergepatcht (Spielversion vor 1.15)? Sonst ZUERST die Schritte in LIESMICH.txt!" Yellow
-Write-Host ""
 Say "[1/4] Vampire Survivors suchen ..."
 $game = Find-SteamGame 1794680
 if (-not $game) { Fail "Vampire Survivors ist nicht installiert (Steam). Bitte erst installieren." }
@@ -30,4 +28,4 @@ Write-Host ""
 Say "Fertig eingerichtet!" Green
 Say "Der erste Start dauert laenger (MelonLoader richtet sich ein)."
 Say "Oben links auf dem Titelbildschirm muss ein Verbindungsfeld erscheinen."
-Say "Kommt keins: Spielversion zu neu (1.15+) -> downpatchen, siehe LIESMICH.txt." Yellow
+Say "Kommt keins: Spiel einmal starten und schliessen, dann nochmal. Hilft das nicht: beim Host melden." Yellow
