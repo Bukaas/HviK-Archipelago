@@ -88,6 +88,18 @@ GAMES = {
         "Tipp aus der Anleitung: in BizHawk unter Config -> Hotkeys die meisten Tasten mit Esc",
         "abschalten, damit du nicht aus Versehen Savestates o.ae. ausloest.",
     ]),
+    "dsr": ("HviK-DarkSouls1", "Dark Souls Remastered", [
+        "Archipelago brauchst du NICHT. EINRICHTEN.bat laedt den DSAP-Client v0.2.6 in diesen Ordner",
+        "(passend zur Version auf dem HviK-Server) und sichert einmal deine normalen Spielstaende",
+        "nach 'Spielstand-Sicherung'.",
+        "",
+        "WICHTIG: Im Spiel System -> Netzwerk-Einstellungen -> Startmodus 'Offline starten'.",
+        "Laut Mod-Anleitung passend: Spielversion App 1.03.1 / Regulation 1.04 (aktuelle Steam-Version).",
+        "",
+        "Am Spieltag: START.bat -> Spiel + DSAP-Client starten -> im Client Menue (drei Striche):",
+        "Host hvik.org:38281, Slot = dein Name -> Connect -> mit RECHTSklick zurueck ins Spiel.",
+        "Den DSAP-Client die ganze Zeit offen lassen.",
+    ]),
     "vampire": ("HviK-VampireSurvivors", "Vampire Survivors", [
         "Archipelago brauchst du NICHT.",
         "",
