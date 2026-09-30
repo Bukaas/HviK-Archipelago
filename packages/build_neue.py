@@ -79,7 +79,7 @@ GAMES = {
     "oot": ("HviK-OcarinaOfTime", "Zelda: Ocarina of Time", [
         "Du brauchst: Archipelago 0.6.7 und deine eigene ROM: Ocarina of Time (USA) Version 1.0,",
         "als .z64 oder .n64 (nicht 1.1/1.2, nicht die GameCube-Fassung). Die ROM ist nicht im Paket.",
-        "EINRICHTEN.bat laedt BizHawk 2.10 in diesen Ordner und stellt Archipelago so ein, dass es nach",
+        "EINRICHTEN.bat laedt BizHawk 2.9.1 in diesen Ordner und stellt Archipelago so ein, dass es nach",
         "dem Patchen BizHawk direkt mit dem Verbindungs-Skript (connector_oot.lua) startet.",
         "",
         "Pro Runde gibt es eine eigene .apz5-Datei (auf hvik.org bei 'Deine Datei').",

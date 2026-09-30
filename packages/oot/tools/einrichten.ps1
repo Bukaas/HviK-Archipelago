@@ -1,8 +1,11 @@
 # HviK Archipelago - Ocarina of Time einmalig einrichten:
-# BizHawk 2.10 (portable) in diesen Ordner, Grundeinstellungen setzen und Archipelago sagen, dass es nach dem Patchen
+# BizHawk 2.9.1 (portable) in diesen Ordner, Grundeinstellungen setzen und Archipelago sagen, dass es nach dem Patchen
 # BizHawk MIT dem Verbindungs-Skript connector_oot.lua startet (host.yaml -> oot_options.rom_start = unser Starter).
 . "$PSScriptRoot\hvik.ps1"
-$BizUrl = "https://github.com/TASEmulators/BizHawk/releases/download/2.10/BizHawk-2.10-win-x64.zip"
+# 2.9.1 statt 2.10: connector_oot.lua aus Archipelago 0.6.7 kennt 2.10 nicht ("newer than we know about") -
+# es liest dann falsche Speicherstellen, der Client meldet sich nie an und das Spiel ruckelt durch die Warnungen.
+$BizVer = "2.9.1"
+$BizUrl = "https://github.com/TASEmulators/BizHawk/releases/download/$BizVer/BizHawk-$BizVer-win-x64.zip"
 $biz = Join-Path $HviK.Root "BizHawk"
 
 Say "[1/4] Archipelago ..."
@@ -11,12 +14,28 @@ $lua = Join-Path $HviK.ApDir "data\lua\connector_oot.lua"
 if (-not (Test-Path $lua)) { Fail "connector_oot.lua fehlt in Archipelago - bitte Archipelago 0.6.7 neu installieren." }
 Ok "Archipelago gefunden."
 
-Say "[2/4] BizHawk 2.10 (Emulator, ca. 80 MB) ..."
+Say "[2/4] BizHawk $BizVer (Emulator, ca. 65 MB) ..."
+$verFile = Join-Path $biz "hvik-version.txt"
+$haveVer = if (Test-Path $verFile) { (Get-Content $verFile -Raw).Trim() } elseif (Test-Path (Join-Path $biz "EmuHawk.exe")) { "alt" } else { "" }
+$oldBiz = $null
+if ($haveVer -and $haveVer -ne $BizVer) {
+    # andere BizHawk-Version: zur Seite legen, Spielstaende (N64\SaveRAM) gleich uebernehmen
+    $oldBiz = "$biz-$haveVer-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+    Get-Process EmuHawk -ErrorAction SilentlyContinue | Stop-Process -Force
+    Move-Item $biz $oldBiz
+    Say "Alte BizHawk-Version liegt jetzt in $oldBiz (kann spaeter geloescht werden)."
+}
 if (-not (Test-Path (Join-Path $biz "EmuHawk.exe"))) {
-    $z = Get-File $BizUrl "BizHawk-2.10-win-x64.zip"
+    $z = Get-File $BizUrl "BizHawk-$BizVer-win-x64.zip"
     Expand-Zip $z $biz
 }
 if (-not (Test-Path (Join-Path $biz "EmuHawk.exe"))) { Fail "BizHawk konnte nicht entpackt werden - beim Host melden." }
+if ($oldBiz -and (Test-Path (Join-Path $oldBiz "N64\SaveRAM"))) {
+    New-Item -ItemType Directory -Force (Join-Path $biz "N64") | Out-Null
+    Copy-Item (Join-Path $oldBiz "N64\SaveRAM") (Join-Path $biz "N64") -Recurse -Force
+    Ok "Spielstaende aus der alten Version uebernommen."
+}
+[IO.File]::WriteAllText($verFile, $BizVer)
 # Grundeinstellungen aus der OoT-Anleitung: im Hintergrund weiterlaufen + Eingaben annehmen, SaveRAM automatisch sichern.
 # Nur beim allerersten Mal (spaetere eigene Einstellungen nicht ueberschreiben).
 $cfg = Join-Path $biz "config.ini"
