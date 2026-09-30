@@ -1,5 +1,5 @@
 # HviK Archipelago - Twilight Princess einmalig einrichten:
-# Twilight Princess.apworld v0.3.0 in Archipelago, Dolphin 2609 (portable) mit GCI-Ordner als Speicherkarte A,
+# Twilight Princess.apworld v0.3.0 in Archipelago, Dolphin 2503a (portable) mit GCI-Ordner als Speicherkarte A,
 # die drei GCI-Dateien (US) hinein, ISO einmal auswaehlen.
 . "$PSScriptRoot\hvik.ps1"
 . "$PSScriptRoot\tp.ps1"
@@ -18,11 +18,21 @@ New-Item -ItemType Directory -Force $worlds | Out-Null
 Copy-Item (Join-Path $tmp "Twilight Princess.apworld") (Join-Path $worlds "Twilight Princess.apworld") -Force
 Ok "Twilight Princess.apworld installiert."
 
-Say "[2/4] Dolphin (Emulator) ..."
+Say "[2/4] Dolphin $TP_DOLPHIN_VERSION (Emulator) ..."
+$verFile = Join-Path $TP_DOLPHIN "hvik-version.txt"
+$haveVer = if (Test-Path $verFile) { (Get-Content $verFile -Raw).Trim() } elseif (Test-Path (Join-Path $TP_DOLPHIN "Dolphin.exe")) { "alt" } else { "" }
+$oldDir = $null
+if ($haveVer -and $haveVer -ne $TP_DOLPHIN_VERSION) {
+    # andere Dolphin-Version im Ordner: zur Seite legen, Speicherstaende/Einstellungen (User) gleich uebernehmen
+    $oldDir = "$TP_DOLPHIN-$haveVer-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+    Get-Process Dolphin -ErrorAction SilentlyContinue | Stop-Process -Force
+    Move-Item $TP_DOLPHIN $oldDir
+    Say "Alte Dolphin-Version liegt jetzt in $oldDir (kann spaeter geloescht werden)."
+}
 if (-not (Test-Path (Join-Path $TP_DOLPHIN "Dolphin.exe"))) {
-    $out = Join-Path $env:TEMP "hvik-archipelago\dolphin-2609-x64.7z"
+    $out = Join-Path $env:TEMP "hvik-archipelago\dolphin-$TP_DOLPHIN_VERSION-x64.7z"
     New-Item -ItemType Directory -Force (Split-Path $out) | Out-Null
-    Say "Lade Dolphin 2609 ..."
+    Say "Lade Dolphin $TP_DOLPHIN_VERSION ..."
     try { Invoke-WebRequest -Uri $TP_DOLPHIN_URL -OutFile $out -UseBasicParsing -UserAgent "Mozilla/5.0" }
     catch { Fail "Dolphin-Download fehlgeschlagen. Internet da? Sonst beim Host melden." }
     # Windows 11 kann .7z mit dem eingebauten tar entpacken, Windows 10 nicht (kein LZMA) ->
@@ -37,6 +47,11 @@ if (-not (Test-Path (Join-Path $TP_DOLPHIN "Dolphin.exe"))) {
     }
     if (-not (Test-Path (Join-Path $TP_DOLPHIN "Dolphin.exe"))) { Fail "Dolphin konnte nicht entpackt werden - beim Host melden." }
 }
+if ($oldDir -and (Test-Path (Join-Path $oldDir "User"))) {
+    Copy-Item (Join-Path $oldDir "User") $TP_DOLPHIN -Recurse -Force
+    Ok "Speicherstaende und Einstellungen aus der alten Version uebernommen."
+}
+[IO.File]::WriteAllText($verFile, $TP_DOLPHIN_VERSION)
 # portable.txt: Dolphin nimmt seine Einstellungen aus Dolphin-x64\User statt aus dem Benutzerprofil
 New-Item -ItemType File -Force (Join-Path $TP_DOLPHIN "portable.txt") | Out-Null
 Set-DolphinGciSlot

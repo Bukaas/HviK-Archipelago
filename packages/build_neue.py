@@ -54,7 +54,7 @@ GAMES = {
         "Du brauchst: Archipelago 0.6.7 und deine eigene Twilight Princess ISO (GameCube; USA, Europa oder Japan).",
         "Das Paket NICHT in einen OneDrive-Ordner legen (sonst findet der Client Dolphin nicht).",
         "EINRICHTEN.bat installiert den Twilight-Princess-Client (apworld v0.3.0) in Archipelago,",
-        "legt Dolphin 2609 in diesen Ordner (eigene Einstellungen, deine andere Dolphin-Installation",
+        "legt Dolphin 2503a in diesen Ordner (eigene Einstellungen, deine andere Dolphin-Installation",
         "bleibt unberuehrt) und kopiert die drei Speicherstaende in Speicherkarte A.",
         "",
         "Im Spiel: Speicherstand 3 'REL Loader' starten (nur EINMAL pro Dolphin-Sitzung!),",

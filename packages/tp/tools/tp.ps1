@@ -2,7 +2,10 @@
 # Dolphin liegt "portable" im Paket (eigene Einstellungen in Dolphin-x64\User), damit Speicherkarte A als GCI-Ordner
 # eingestellt werden kann, ohne eine vorhandene Dolphin-Installation anzufassen.
 $TP_APWORLD_URL = "https://github.com/WritingHusky/Twilight_Princess_apworld/releases/download/v0.3.0/Twilight_Princess_apworld-v0.3.0.zip"
-$TP_DOLPHIN_URL = "https://dl.dolphin-emu.org/releases/2609/dolphin-2609-x64.7z"
+# 2503a statt der neuesten Version: 2609 stuerzt bei manchen beim Einstecken eines Controllers ab.
+# 2503a ist zeitgleich mit der apworld (Mai 2025) entstanden.
+$TP_DOLPHIN_VERSION = "2503a"
+$TP_DOLPHIN_URL = "https://dl.dolphin-emu.org/releases/$TP_DOLPHIN_VERSION/dolphin-$TP_DOLPHIN_VERSION-x64.7z"
 $TP_DOLPHIN = Join-Path $HviK.Root "Dolphin-x64"
 # Speicherkarte A je Region (Dolphin nimmt den Ordner passend zur Region der ISO)
 function Get-TpGciDir([string]$Region) { Join-Path $TP_DOLPHIN "User\GC\$Region\Card A" }
