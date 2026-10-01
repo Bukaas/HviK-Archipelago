@@ -219,6 +219,15 @@ GAMES = {
         "Archipelago-Feldern Server hvik.org:38281 und deinen Namen eintragen -> OK.",
         "Ohne Mods spielen: Stardew einfach normal ueber Steam starten.",
     ]),
+    "satisfactory": ("HviK-Satisfactory", "Satisfactory", [
+        "Archipelago und den Satisfactory Mod Manager brauchst du NICHT. EINRICHTEN.bat installiert",
+        "den Archipelago-Mod 2.4.9 mit allen Abhaengigkeiten (SML, ContentLib, FreeSamples, ...) direkt",
+        "in dein Satisfactory (Steam). Alle, die in derselben Fabrik mitspielen, brauchen dieses Paket.",
+        "",
+        "Am Spieltag (Host): START.bat -> Neues Spiel -> 'Mod Savegame Settings' -> Server hvik.org:38281",
+        "und Name -> Spiel erstellen. Mitspieler treten dem Host ueber Steam bei.",
+        "Befehle im Spiel-Chat ohne Ausrufezeichen, z.B. /hint Iron Plate",
+    ]),
     "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
         "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
         "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
