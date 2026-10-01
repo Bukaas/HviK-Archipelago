@@ -231,6 +231,18 @@ GAMES = {
         "und Name -> Spiel erstellen. Mitspieler treten dem Host ueber Steam bei.",
         "Befehle im Spiel-Chat ohne Ausrufezeichen, z.B. /hint Iron Plate",
     ]),
+    "mhw": ("HviK-MonsterHunterWorld", "Monster Hunter World", [
+        "ALPHA-Erweiterung (MHW Archipelago 0.1.3 von QPL22). Gedacht mit Iceborne, Spielversion 15.23.",
+        "",
+        "EINRICHTEN.bat sichert deinen Spielstand (Ordner spielstand-sicherung), installiert .NET 8,",
+        "Stracker's Loader + Performance Booster (die gibt es NUR auf NexusMods - EINRICHTEN oeffnet die",
+        "Seiten, du laedst sie per 'Manual Download' in deinen Downloads-Ordner und startest EINRICHTEN",
+        "nochmal) und legt den MHWGenerator in diesen Ordner.",
+        "",
+        "Am Spieltag: START.bat -> im Generator Server hvik.org:38281 + deinen Namen -> Connect ->",
+        "Fenster schliessen -> das Spiel startet. Notfalls im Spiel-Chat /connect hvik.org:38281 DeinName.",
+        "WICHTIG: Mods gelten online als Cheaten - nur mit anderen Archipelago-Spielern zusammen spielen.",
+    ]),
     "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
         "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
         "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
