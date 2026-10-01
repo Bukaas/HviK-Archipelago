@@ -130,6 +130,15 @@ GAMES = {
         "dann 'Launch KH3' im Client und einen NEUEN Spielstand beginnen.",
         "KH3 AP ist noch Alpha - Fehler bitte dem Host melden.",
     ]),
+    "hk": ("HviK-HollowKnight", "Hollow Knight", [
+        "Archipelago und Scarab/Lumafly brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel (Steam):",
+        "Modding API 1.5.78 und den Archipelago-Mod 0.12.0 mit ItemChanger, MenuChanger, Benchwarp, QoL, Vasi.",
+        "Die Original-Spieldatei wird als Assembly-CSharp.dll.v gesichert.",
+        "",
+        "Am Spieltag: START.bat -> leeren Speicherplatz -> Modus 'Archipelago' -> Start",
+        "(Server, Port und dein Name sind schon eingetragen).",
+        "Mods wieder aus: in Steam 'Dateien auf Fehler ueberpruefen'.",
+    ]),
     "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
         "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
         "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
