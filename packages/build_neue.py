@@ -139,6 +139,48 @@ GAMES = {
         "(Server, Port und dein Name sind schon eingetragen).",
         "Mods wieder aus: in Steam 'Dateien auf Fehler ueberpruefen'.",
     ]),
+    "poke_rb": ("HviK-PokemonRotBlau", "Pokemon Rot/Blau", [
+        "Du brauchst: Archipelago 0.6.7 und deine eigene ROM: Pokemon Red oder Blue (englisch, USA/Europa, .gb).",
+        "Deutsche ROMs gehen NICHT. Die ROM ist nicht im Paket.",
+        "EINRICHTEN.bat laedt BizHawk 2.9.1 (Emulator) in diesen Ordner und stellt Archipelago so ein,",
+        "dass es nach dem Patchen BizHawk direkt mit dem Verbindungs-Skript startet.",
+        "",
+        "Pro Runde gibt es eine eigene Datei (auf hvik.org bei 'Deine Datei' oder im Startpaket).",
+        "START.bat -> ROM wird gepatcht -> BizHawk startet und verbindet sich mit hvik.org.",
+        "Beim allerersten Mal fragt Archipelago nach deiner ROM.",
+    ]),
+    "poke_em": ("HviK-PokemonSmaragd", "Pokemon Smaragd", [
+        "Du brauchst: Archipelago 0.6.7 und deine eigene ROM: Pokemon Emerald (englisch, USA/Europa, .gba).",
+        "Deutsche ROMs gehen NICHT. Die ROM ist nicht im Paket.",
+        "EINRICHTEN.bat laedt BizHawk 2.9.1 (Emulator) in diesen Ordner und stellt Archipelago so ein,",
+        "dass es nach dem Patchen BizHawk direkt mit dem Verbindungs-Skript startet.",
+        "",
+        "Pro Runde gibt es eine eigene Datei (auf hvik.org bei 'Deine Datei' oder im Startpaket).",
+        "START.bat -> ROM wird gepatcht -> BizHawk startet und verbindet sich mit hvik.org.",
+        "Beim allerersten Mal fragt Archipelago nach deiner ROM.",
+    ]),
+    "poke_fr": ("HviK-PokemonFeuerrot", "Pokemon Feuerrot/Blattgruen", [
+        "Du brauchst: Archipelago 0.6.7 und deine eigene ROM: Pokemon FireRed oder LeafGreen (englisch, USA, 1.0/1.1, .gba).",
+        "Deutsche ROMs gehen NICHT. Die ROM ist nicht im Paket.",
+        "EINRICHTEN.bat installiert ausserdem die Feuerrot/Blattgruen-Erweiterung (pokemon_frlg.apworld 1.1.4).",
+        "EINRICHTEN.bat laedt BizHawk 2.9.1 (Emulator) in diesen Ordner und stellt Archipelago so ein,",
+        "dass es nach dem Patchen BizHawk direkt mit dem Verbindungs-Skript startet.",
+        "",
+        "Pro Runde gibt es eine eigene Datei (auf hvik.org bei 'Deine Datei' oder im Startpaket).",
+        "START.bat -> ROM wird gepatcht -> BizHawk startet und verbindet sich mit hvik.org.",
+        "Beim allerersten Mal fragt Archipelago nach deiner ROM.",
+    ]),
+    "poke_cr": ("HviK-PokemonKristall", "Pokemon Kristall", [
+        "Du brauchst: Archipelago 0.6.7 und deine eigene ROM: Pokemon Crystal (englisch, USA/Europa, 1.0/1.1, .gbc).",
+        "Deutsche ROMs gehen NICHT. Die ROM ist nicht im Paket.",
+        "EINRICHTEN.bat installiert ausserdem die Kristall-Erweiterung (pokemon_crystal.apworld 5.4.6).",
+        "EINRICHTEN.bat laedt BizHawk 2.9.1 (Emulator) in diesen Ordner und stellt Archipelago so ein,",
+        "dass es nach dem Patchen BizHawk direkt mit dem Verbindungs-Skript startet.",
+        "",
+        "Pro Runde gibt es eine eigene Datei (auf hvik.org bei 'Deine Datei' oder im Startpaket).",
+        "START.bat -> ROM wird gepatcht -> BizHawk startet und verbindet sich mit hvik.org.",
+        "Beim allerersten Mal fragt Archipelago nach deiner ROM.",
+    ]),
     "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
         "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
         "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
@@ -181,6 +223,9 @@ GAMES = {
         "takacomic/VSModdedScript (Pins im Archipelago-Discord).",
     ]),
 }
+
+# Pakete, die sich Skripte teilen: zusaetzlich alle tools/*.ps1 aus diesen Ordnern (eigene gleichnamige gewinnen)
+SHARED_TOOLS = {key: ["pokemon_common"] for key in ("poke_rb", "poke_em", "poke_fr", "poke_cr")}
 
 # Text VOR "EINMALIG" in der LIESMICH (z. B. Downpatchen)
 PRE = {}
@@ -251,8 +296,9 @@ def build():
             files[name] = crlf(BAT.format(game=game, what=headline, headline=headline, script=script))
         for name, text in EXTRA_FILES.get(key, {}).items():
             files[name] = crlf(text)
-        for f in sorted((HERE / key / "tools").glob("*.ps1")):
-            files[f"tools/{f.name}"] = crlf(f.read_text(encoding="utf-8"))
+        for src in SHARED_TOOLS.get(key, []) + [key]:
+            for f in sorted((HERE / src / "tools").glob("*.ps1")):
+                files[f"tools/{f.name}"] = crlf(f.read_text(encoding="utf-8"))
         # Beiliegende Dateien (z. B. TP-Speicherstaende in gci/) unveraendert mitnehmen
         extra = HERE / key / "files"
         if extra.is_dir():
