@@ -3,7 +3,7 @@
 . "$PSScriptRoot\satisfactory.ps1"
 $sf = Find-Satisfactory
 $game = $sf.Path
-if (-not $sf -or -not (Test-Path (Join-Path (Get-SfModsDir $game) "Archipelago\Archipelago.uplugin"))) {
+if (-not $sf -or -not (Test-SfArchipelago $game)) {
     Fail "Noch nicht eingerichtet - bitte zuerst EINRICHTEN.bat doppelklicken."
 }
 $name = Get-PlayerName

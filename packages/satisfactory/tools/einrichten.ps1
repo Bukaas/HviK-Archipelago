@@ -15,7 +15,9 @@ Say "[2/2] Mods (ca. 190 MB) ..."
 $mods = Get-SfModsDir $game
 New-Item -ItemType Directory -Force $mods | Out-Null
 foreach ($m in $SF_MODS) {
-    $target = Join-Path $mods $m.Ref
+    $target = Get-SfModDir $game $m
+    $wrong = Join-Path $mods $m.Ref   # aeltere Paket-Versionen haben GameFeature-Mods hier abgelegt
+    if ($m.GameFeature -and (Test-Path $wrong)) { Remove-Item $wrong -Recurse -Force; Say "$($m.Ref): alten Ordner an falscher Stelle entfernt." }
     $marker = Join-Path $target "hvik-version.txt"
     if ((Test-Path $marker) -and ((Get-Content $marker -Raw).Trim() -eq $m.Version)) { Ok "$($m.Ref) $($m.Version) ist schon da."; continue }
     $z = Get-File $m.Url "sf-$($m.Ref)-$($m.Version).zip"
@@ -25,7 +27,7 @@ foreach ($m in $SF_MODS) {
     [IO.File]::WriteAllText($marker, $m.Version)
     Ok "$($m.Ref) $($m.Version) installiert."
 }
-if (-not (Test-Path (Join-Path $mods "Archipelago\Archipelago.uplugin"))) { Fail "Archipelago-Mod fehlt nach dem Entpacken - beim Host melden." }
+if (-not (Test-SfArchipelago $game)) { Fail "Archipelago-Mod fehlt nach dem Entpacken - beim Host melden." }
 Get-PlayerName | Out-Null
 
 Write-Host ""
