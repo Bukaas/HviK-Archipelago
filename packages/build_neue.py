@@ -131,6 +131,9 @@ GAMES = {
         "KH3 AP ist noch Alpha - Fehler bitte dem Host melden.",
     ]),
     "hk": ("HviK-HollowKnight", "Hollow Knight", [
+        "WICHTIG: Die Mods laufen nur mit Hollow Knight 1.5.78. In Steam: Eigenschaften ->",
+        "Spielversionen & Betas -> '1.5.78.11833 - Previous version' waehlen (sonst Absturz beim Start).",
+        "",
         "Archipelago und Scarab/Lumafly brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel (Steam):",
         "Modding API 1.5.78 und den Archipelago-Mod 0.12.0 mit ItemChanger, MenuChanger, Benchwarp, QoL, Vasi.",
         "Die Original-Spieldatei wird als Assembly-CSharp.dll.v gesichert.",

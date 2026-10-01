@@ -3,6 +3,10 @@
 . "$PSScriptRoot\hvik.ps1"
 . "$PSScriptRoot\hk.ps1"
 
+Say "WICHTIG: Die Mods laufen nur mit Hollow Knight 1.5.78 - sonst stuerzt das Spiel sofort ab." Yellow
+Say "  In Steam: Rechtsklick Hollow Knight -> Eigenschaften -> Spielversionen & Betas" Yellow
+Say "  -> '1.5.78.11833 - Previous version' waehlen und warten, bis Steam fertig ist." Yellow
+Write-Host ""
 Say "[1/3] Hollow Knight suchen ..."
 $game = Find-SteamGame $HK_APPID
 if (-not $game) { Fail "Hollow Knight ist nicht installiert (Steam). Bitte erst installieren." }
