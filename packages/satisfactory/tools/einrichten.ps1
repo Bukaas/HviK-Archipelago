@@ -4,11 +4,12 @@
 . "$PSScriptRoot\satisfactory.ps1"
 
 Say "[1/2] Satisfactory suchen ..."
-$game = Find-SteamGame $SF_APPID
-if (-not $game) { Fail "Satisfactory ist nicht installiert (Steam). Bitte erst installieren." }
+$sf = Find-Satisfactory
+if (-not $sf) { Fail "Satisfactory ist nicht installiert (Steam oder Epic). Bitte erst installieren." }
+$game = $sf.Path
 if (-not (Test-Path (Join-Path $game "FactoryGame"))) { Fail "Spieldateien nicht gefunden - Satisfactory einmal normal starten, dann nochmal." }
-Ok "Gefunden: $game"
-Get-Process FactoryGame*, FactoryGameSteam* -ErrorAction SilentlyContinue | ForEach-Object { Fail "Satisfactory laeuft noch - bitte erst beenden." }
+Ok "Gefunden ($($sf.Store)): $game"
+Get-Process FactoryGame* -ErrorAction SilentlyContinue | ForEach-Object { Fail "Satisfactory laeuft noch - bitte erst beenden." }
 
 Say "[2/2] Mods (ca. 190 MB) ..."
 $mods = Get-SfModsDir $game
@@ -30,5 +31,5 @@ Get-PlayerName | Out-Null
 Write-Host ""
 Say "Fertig eingerichtet!" Green
 Say "Am Spieltag: START.bat -> Neues Spiel -> unten rechts 'Mod Savegame Settings' -> Server + Name."
-Say "Mitspieler in deiner Fabrik: brauchen dasselbe Paket (EINRICHTEN.bat) und treten ueber Steam bei."
+Say "Mitspieler in deiner Fabrik: brauchen dasselbe Paket (EINRICHTEN.bat) und treten dem Host bei."
 Say "Mods wieder aus: Ordner FactoryGame\Mods im Spielordner umbenennen."

@@ -12,3 +12,23 @@ $SF_MODS = @(
     @{ Ref = "Archipelago"; Version = "2.4.9"; Url = "https://api.ficsit.app/v1/version/7z3iqZPiB94hb9/Windows/download"; Sha = "398271B48123CAEFD3A82C8DB00167C98E7E56354D30145D2B3E0E12DFFD535D" }
 )
 function Get-SfModsDir([string]$Game) { Join-Path $Game "FactoryGame\Mods" }
+
+# Epic-Version: Installationsordner + Startlink aus den Manifesten des Epic Games Launchers.
+function Find-EpicGame([string]$Pattern) {
+    $dir = Join-Path $env:ProgramData "Epic\EpicGamesLauncher\Data\Manifests"
+    foreach ($f in Get-ChildItem $dir -Filter *.item -ErrorAction SilentlyContinue) {
+        try { $m = Get-Content $f.FullName -Raw | ConvertFrom-Json } catch { continue }
+        if ($m.DisplayName -match $Pattern -and $m.InstallLocation -and (Test-Path $m.InstallLocation)) {
+            $id = "$($m.CatalogNamespace)%3A$($m.CatalogItemId)%3A$($m.AppName)"
+            return [pscustomobject]@{ Path = $m.InstallLocation; Launch = "com.epicgames.launcher://apps/$($id)?action=launch&silent=true"; Store = "Epic" }
+        }
+    }
+    return $null
+}
+
+# Satisfactory suchen: erst Steam, dann Epic.
+function Find-Satisfactory {
+    $steam = Find-SteamGame $SF_APPID
+    if ($steam) { return [pscustomobject]@{ Path = $steam; Launch = "steam://rungameid/$SF_APPID"; Store = "Steam" } }
+    return Find-EpicGame '^Satisfactory$'
+}
