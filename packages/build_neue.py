@@ -204,6 +204,21 @@ GAMES = {
         "Am Spieltag: START.bat traegt Server und Namen ein -> Titelbild 'Status: Connected!' -> neues Spiel.",
         "Mods wieder aus: im Spielordner winhttp.dll loeschen.",
     ]),
+    "celeste64": ("HviK-Celeste64", "Celeste 64", [
+        "Celeste 64 ist kostenlos - Steam und Archipelago brauchst du NICHT.",
+        "EINRICHTEN.bat laedt die Archipelago-Fassung (v1.4.1, ca. 60 MB) in diesen Ordner",
+        "und traegt Server und deinen Namen in AP.json ein.",
+        "",
+        "Am Spieltag: START.bat - kommst du am Titelbild vorbei, bist du verbunden.",
+    ]),
+    "stardew": ("HviK-StardewValley", "Stardew Valley", [
+        "Archipelago brauchst du NICHT. EINRICHTEN.bat installiert SMAPI 4.5.2 (Mod-Loader) und den Mod",
+        "StardewArchipelago 7.4.27 (passend zum HviK-Server) in dein Stardew Valley (Steam).",
+        "",
+        "Am Spieltag: START.bat (startet Stardew mit SMAPI) -> Neu -> neue Farm -> in den drei",
+        "Archipelago-Feldern Server hvik.org:38281 und deinen Namen eintragen -> OK.",
+        "Ohne Mods spielen: Stardew einfach normal ueber Steam starten.",
+    ]),
     "ror2": ("HviK-RiskOfRain2", "Risk of Rain 2", [
         "Archipelago und r2modman brauchst du NICHT. EINRICHTEN.bat installiert direkt ins Spiel:",
         "BepInEx, HookGenPatcher, R2API, InLobbyConfig, ScrollableLobbyUI und den Archipelago-Mod 1.1.3,",
