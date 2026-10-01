@@ -4,8 +4,8 @@
 . "$PSScriptRoot\satisfactory.ps1"
 
 Say "[1/2] Satisfactory suchen ..."
-$sf = Find-Satisfactory
-if (-not $sf) { Fail "Satisfactory ist nicht installiert (Steam oder Epic). Bitte erst installieren." }
+$sf = Find-Satisfactory -Ask
+if (-not $sf) { Fail "Satisfactory bei $(Get-Content (Join-Path $HviK.Root 'plattform.txt')) nicht gefunden. Installiert? Sonst EINRICHTEN.bat nochmal und die andere Plattform waehlen." }
 $game = $sf.Path
 if (-not (Test-Path (Join-Path $game "FactoryGame"))) { Fail "Spieldateien nicht gefunden - Satisfactory einmal normal starten, dann nochmal." }
 Ok "Gefunden ($($sf.Store)): $game"

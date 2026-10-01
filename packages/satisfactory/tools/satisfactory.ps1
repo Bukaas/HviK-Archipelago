@@ -26,9 +26,25 @@ function Find-EpicGame([string]$Pattern) {
     return $null
 }
 
-# Satisfactory suchen: erst Steam, dann Epic.
-function Find-Satisfactory {
-    $steam = Find-SteamGame $SF_APPID
-    if ($steam) { return [pscustomobject]@{ Path = $steam; Launch = "steam://rungameid/$SF_APPID"; Store = "Steam" } }
+# Steam oder Epic? Wird bei EINRICHTEN gefragt (-Ask) und in plattform.txt gemerkt, START nimmt die gemerkte Wahl.
+function Find-Satisfactory([switch]$Ask) {
+    $file = Join-Path $HviK.Root "plattform.txt"
+    $store = if (Test-Path $file) { (Get-Content $file -Raw).Trim() } else { "" }
+    if ($Ask -or -not $store) {
+        $hint = if ($store) { " [Enter = $store]" } else { "" }
+        while ($true) {
+            $a = (Read-Host "  Hast du Satisfactory bei Steam oder Epic? 1 = Steam, 2 = Epic$hint").Trim()
+            if (-not $a -and $store) { break }
+            if ($a -eq "1" -or $a -match '^(?i)steam$') { $store = "Steam"; break }
+            if ($a -eq "2" -or $a -match '^(?i)epic$') { $store = "Epic"; break }
+            Say "Bitte 1 (Steam) oder 2 (Epic) eingeben." Yellow
+        }
+        [IO.File]::WriteAllText($file, $store)
+    }
+    if ($store -eq "Steam") {
+        $steam = Find-SteamGame $SF_APPID
+        if ($steam) { return [pscustomobject]@{ Path = $steam; Launch = "steam://rungameid/$SF_APPID"; Store = "Steam" } }
+        return $null
+    }
     return Find-EpicGame '^Satisfactory$'
 }
