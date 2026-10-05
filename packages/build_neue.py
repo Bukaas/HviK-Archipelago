@@ -130,6 +130,16 @@ GAMES = {
         "dann 'Launch KH3' im Client und einen NEUEN Spielstand beginnen.",
         "KH3 AP ist noch Alpha - Fehler bitte dem Host melden.",
     ]),
+    "kh2": ("HviK-KingdomHearts2", "Kingdom Hearts II", [
+        "Du brauchst: Kingdom Hearts HD 1.5+2.5 ReMIX (PC, Steam oder Epic) und Archipelago 0.6.7.",
+        "EINRICHTEN.bat laedt den OpenKH Mod Manager in diesen Ordner und oeffnet ihn. Dort EINMAL:",
+        "Setup-Wizard (Panacea + Lua Backend, Spieldaten entpacken) und drei Mods per GitHub-Name",
+        "hinzufuegen (stehen in MODS.txt). Das Paket NICHT in einen OneDrive-Ordner legen.",
+        "",
+        "Am Spieltag: START.bat - zeigt deine Seed-Datei, du installierst sie im Mod Manager ganz oben,",
+        "'Build and Run', neuer Spielstand, dann verbindet sich der KH2 Client mit hvik.org.",
+        "Achtung: Der Mod ArchipelagoEnablers belegt Speicherplatz 99 mit einem Autosave.",
+    ]),
     "hk": ("HviK-HollowKnight", "Hollow Knight", [
         "WICHTIG: Die Mods laufen nur mit Hollow Knight 1.5.78. In Steam: Eigenschaften ->",
         "Spielversionen & Betas -> '1.5.78.11833 - Previous version' waehlen (sonst Absturz beim Start).",
