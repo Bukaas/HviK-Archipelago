@@ -106,3 +106,30 @@ function Get-Round {
 function Copy-ToClipboard([string]$Text) {
     try { Set-Clipboard -Value $Text } catch { $Text | clip.exe }
 }
+
+# Welcher Archipelago-Server? Es koennen mehrere Runden gleichzeitig laufen (je eigener Port).
+# 1. deine-runde\server.txt (liegt im persoenlichen Download)  2. die Runde, in der dein Name mitspielt
+# 3. es laeuft nur eine Runde  4. sonst der Standard hvik.org:38281
+function Resolve-HviKServer {
+    $txt = Join-Path $HviK.Root "deine-runde\server.txt"
+    if (Test-Path $txt) {
+        $s = (Get-Content $txt -Raw).Trim()
+        if ($s -match '^[A-Za-z0-9.\-]+:\d+$') { return $s }
+    }
+    $rounds = @()
+    try { $rounds = @((Invoke-RestMethod -Uri $HviK.Api -TimeoutSec 10).rounds) } catch { return $HviK.Server }
+    $rounds = @($rounds | Where-Object { $_ -and $_.server })
+    if ($rounds.Count -eq 0) { return $HviK.Server }
+    if ($rounds.Count -eq 1) { return $rounds[0].server }
+    $nameFile = Join-Path $HviK.Root "name.txt"
+    $name = if (Test-Path $nameFile) { (Get-Content $nameFile -Raw).Trim() } else { "" }
+    $caller = Split-Path -Leaf ($MyInvocation.PSCommandPath)
+    if (-not $name -and $caller -like "start*") {
+        Say "Es laufen gerade mehrere Runden - dein Name sagt mir, welche deine ist." Yellow
+        $name = Get-PlayerName
+    }
+    $mine = $rounds | Where-Object { $_.slots -contains $name } | Select-Object -First 1
+    if ($mine) { return $mine.server }
+    return $HviK.Server
+}
+$HviK.Server = Resolve-HviKServer
