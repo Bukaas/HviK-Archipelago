@@ -3,6 +3,9 @@
 if (-not (Test-Path (Join-Path $HviK.ApDir "custom_worlds\minecraft.apworld"))) {
     Fail "Noch nicht eingerichtet - bitte zuerst EINRICHTEN.bat doppelklicken."
 }
+# Aeltere Einrichtungen haben die APWorld noch ohne Fix -> hier nachholen (sonst startet der Client nicht)
+. "$PSScriptRoot\fix-apworld.ps1"
+Repair-MinecraftApworld (Join-Path $HviK.ApDir "custom_worlds\minecraft.apworld")
 $places = @((Join-Path $HviK.Root "deine-runde"), (Join-Path $env:USERPROFILE "Downloads"))
 $apmc = Get-ChildItem $places -Filter "*.apmc" -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $apmc) { Fail "Keine .apmc-Datei gefunden - auf hvik.org in der Runde 'Deine Datei' herunterladen." }

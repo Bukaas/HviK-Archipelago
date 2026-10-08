@@ -11,6 +11,8 @@ New-Item -ItemType Directory -Force $worlds | Out-Null
 $f = Get-File $Apworld "minecraft.apworld"
 Copy-Item $f (Join-Path $worlds "minecraft.apworld") -Force
 Ok "minecraft.apworld v2.2.1 installiert."
+. "$PSScriptRoot\fix-apworld.ps1"
+Repair-MinecraftApworld (Join-Path $worlds "minecraft.apworld")
 
 Say "[2/2] .apmc-Dateien mit Archipelago verknuepfen ..."
 # nur fuer diesen Windows-Benutzer (HKCU), keine Admin-Rechte noetig
