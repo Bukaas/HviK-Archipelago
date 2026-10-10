@@ -140,6 +140,18 @@ GAMES = {
         "'Build and Run', neuer Spielstand, dann verbindet sich der KH2 Client mit hvik.org.",
         "Achtung: Der Mod ArchipelagoEnablers belegt Speicherplatz 99 mit einem Autosave.",
     ]),
+    "isaac": ("HviK-Isaac", "The Binding of Isaac: Repentance", [
+        "Du brauchst: Isaac mit allen DLCs bis Repentance (oder Repentance+) und Archipelago 0.6.7.",
+        "Und einen Spielstand, in dem die Wege zu den spaeten Endbossen offen sind",
+        "(Mega Satan, The Void/Delirium, Mother, The Beast) - am besten deinen Hauptspielstand.",
+        "",
+        "EINRICHTEN.bat installiert den Isaac Client (tboir.apworld 0.4.3) in Archipelago, traegt",
+        "den Spielordner ein und oeffnet die Workshop-Seite von '!The Archipelago of Isaac':",
+        "dort 'Abonnieren' klicken und Isaac einmal starten.",
+        "",
+        "Am Spieltag: START.bat -> Isaac + Isaac Client starten -> Adresse ist kopiert: im Client",
+        "oben Strg+V -> Connect -> Name (Strg+V) -> Speicherplatz 1-3 -> im Spiel einen Run starten.",
+    ]),
     "hk": ("HviK-HollowKnight", "Hollow Knight", [
         "WICHTIG: Die Mods laufen nur mit Hollow Knight 1.5.78. In Steam: Eigenschaften ->",
         "Spielversionen & Betas -> '1.5.78.11833 - Previous version' waehlen (sonst Absturz beim Start).",
