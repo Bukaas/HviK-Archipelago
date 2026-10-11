@@ -114,6 +114,7 @@ public class GameEvents {
             if ((d < 0 && c.shareDamage) || (d > 0 && c.shareHeal) || c.shareHearts) {
                 JsonObject o = LinkClient.ev("hp");
                 o.addProperty("delta", d);
+                o.addProperty("now", h);  // so weiß der Server, ob mein Stand schon stimmt
                 if (d < 0) o.addProperty("reason", lastReason);
                 c.send(o);
             }
@@ -126,7 +127,7 @@ public class GameEvents {
             c.send(o);
         }
         lastFood = f;
-        if (++statusTimer >= 40) {  // alle 2 s Herzen/Hunger für Anzeige + Website
+        if (++statusTimer >= 20) {  // jede Sekunde Herzen/Hunger für Anzeige + Website
             statusTimer = 0;
             JsonObject o = LinkClient.ev("status");
             o.addProperty("hp", h);
@@ -137,7 +138,7 @@ public class GameEvents {
             o.addProperty("kills", stat(sp, Stats.MOB_KILLS));
             o.addProperty("dist", (stat(sp, Stats.WALK_ONE_CM) + stat(sp, Stats.SPRINT_ONE_CM) + stat(sp, Stats.CROUCH_ONE_CM)
                     + stat(sp, Stats.SWIM_ONE_CM) + stat(sp, Stats.WALK_UNDER_WATER_ONE_CM) + stat(sp, Stats.WALK_ON_WATER_ONE_CM)) / 100);
-            if (++advTimer >= 15) {  // alle 30 s - Achievements seit dem Start
+            if (++advTimer >= 30) {  // alle 30 s - Achievements seit dem Start
                 advTimer = 0;
                 o.addProperty("adv", Math.max(0, advancements(sp) - baseAdv));
             }

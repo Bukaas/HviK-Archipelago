@@ -64,7 +64,7 @@ public class ClientEvents {
             mc.setScreen(new EndScreen());
             return;
         }
-        boolean blocking = !"running".equals(c.status) && !"ended".equals(c.status);
+        boolean blocking = (!"running".equals(c.status) && !"ended".equals(c.status)) || c.countdown() > 0;
         if (blocking && !(mc.screen instanceof LobbyScreen)) mc.setScreen(new LobbyScreen());
     }
 
@@ -109,7 +109,9 @@ public class ClientEvents {
         boolean goal = !c.goalType.isEmpty();
         List<LinkClient.Member> ms = new ArrayList<>(c.members);
         if (goal) ms.sort(Comparator.comparingInt(LinkClient.Member::progress).reversed());
-        String title = c.hardcore ? "☠ HviK Link" : "HviK Link";
+        long t = c.elapsed();
+        String clock = t >= 3600 ? String.format("%d:%02d:%02d", t / 3600, t / 60 % 60, t % 60) : String.format("%d:%02d", t / 60, t % 60);
+        String title = (c.hardcore ? "☠ HviK Link" : "HviK Link") + "  ⏱ " + clock;
         String goalLine = goal ? "⚑ " + c.goalLabel : null;
         List<String[]> rows = new ArrayList<>();
         for (LinkClient.Member m : ms) {

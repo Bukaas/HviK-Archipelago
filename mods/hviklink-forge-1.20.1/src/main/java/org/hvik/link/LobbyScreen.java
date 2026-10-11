@@ -6,6 +6,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.GenericDirtMessageScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -14,6 +16,7 @@ import net.minecraft.network.chat.Component;
  */
 public class LobbyScreen extends Screen {
     private int seenVersion = -1;
+    private int lastCount = -1;
 
     public LobbyScreen() {
         super(Component.literal("HviK Link"));
@@ -25,6 +28,7 @@ public class LobbyScreen extends Screen {
         seenVersion = c.version;
         int cx = width / 2;
         int y = height - 58;
+        if (c.countdown() > 0) return;  // Countdown läuft: keine Knöpfe mehr
         if ("lobby".equals(c.status)) {
             Button ready = Button.builder(Component.literal(c.meReady ? "Doch nicht bereit" : "Bereit ✔"), b -> {
                 JsonObject o = LinkClient.ev("ready");
@@ -71,7 +75,14 @@ public class LobbyScreen extends Screen {
     @Override
     public void tick() {
         LinkClient c = HvikLink.CLIENT;
-        if ("running".equals(c.status) || "ended".equals(c.status) || !c.active()) {
+        int count = c.countdown();
+        if (count != lastCount) {  // Ton pro Sekunde, beim Start ein "Los"
+            if (lastCount > 0 && count == 0) minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.PLAYER_LEVELUP, 1f));
+            else if (count > 0) minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_HAT.value(), count <= 3 ? 1.6f : 1f));
+            if ((lastCount == -1) != (count == -1) || (lastCount > 0) != (count > 0)) rebuildWidgets();
+            lastCount = count;
+        }
+        if (("running".equals(c.status) && count == 0) || "ended".equals(c.status) || !c.active()) {
             minecraft.setScreen(null);
             return;
         }
@@ -100,6 +111,16 @@ public class LobbyScreen extends Screen {
         } else {
             info = c.error.isEmpty() ? "Verbinde mit hvik.org ..." : c.error;
             infoColor = 0xFFFF55;
+        }
+        int count = c.countdown();
+        if (count > 0) {  // großer Countdown in der Mitte
+            g.pose().pushPose();
+            g.pose().scale(6f, 6f, 1f);
+            g.drawCenteredString(font, String.valueOf(count), cx / 6, (height / 2 - 30) / 6, count <= 3 ? 0xFF5555 : 0xFFFF55);
+            g.pose().popPose();
+            g.drawCenteredString(font, "Gleich geht's los – macht euch bereit!", cx, height / 2 + 30, 0xFFFFFF);
+            super.render(g, mouseX, mouseY, partialTick);
+            return;
         }
         g.drawCenteredString(font, info, cx, 30, infoColor);
         int y = 50;

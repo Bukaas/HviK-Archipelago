@@ -13,6 +13,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Verbindung zu hvik.org über Long-Polling (nginx lässt keine WebSockets durch):
@@ -22,7 +24,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public final class LinkClient {
     private final LinkConfig cfg;
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-    private volatile Thread pollThread;
+    private volatile Thread pollThread, sendThread;
+    /** Ausgehende Ereignisse: ein Sender-Thread schickt sie der Reihe nach, mehrere auf einmal. */
+    private final LinkedBlockingQueue<JsonObject> outbox = new LinkedBlockingQueue<>();
+    /** Rundenstart in lokaler Zeit (ms) - liegt beim Countdown in der Zukunft. 0 = unbekannt. */
+    public volatile long startAtMs = 0;
     private volatile boolean running;
     private long seq = 0;
 
@@ -75,13 +81,28 @@ public final class LinkClient {
         pollThread = new Thread(this::pollLoop, "HviK-Link");
         pollThread.setDaemon(true);
         pollThread.start();
+        sendThread = new Thread(this::sendLoop, "HviK-Link-Senden");
+        sendThread.setDaemon(true);
+        sendThread.start();
     }
 
     public synchronized void stop() {
-        running = false;
+        running = false;  // der Sender schickt noch, was in der Warteschlange liegt (z. B. die Wahl des Hosts), und hört dann auf
         if (pollThread != null) pollThread.interrupt();
         pollThread = null;
+        sendThread = null;
         effects.clear();
+    }
+
+    /** Sekunden bis zum Start (Countdown), sonst 0. */
+    public int countdown() {
+        long ms = startAtMs - System.currentTimeMillis();
+        return "running".equals(status) && startAtMs > 0 && ms > 0 ? (int) Math.ceil(ms / 1000.0) : 0;
+    }
+
+    /** Laufzeit der Runde in Sekunden (ab dem Ende des Countdowns). */
+    public long elapsed() {
+        return startAtMs > 0 ? Math.max(0, (System.currentTimeMillis() - startAtMs) / 1000) : 0;
     }
 
     public boolean active() {
@@ -91,23 +112,36 @@ public final class LinkClient {
     // ----- Senden -----
 
     public void send(JsonObject event) {
-        if (!running) return;
-        JsonObject body = new JsonObject();
-        body.addProperty("token", cfg.token);
-        JsonArray arr = new JsonArray();
-        arr.add(event);
-        body.add("events", arr);
-        HttpRequest req = HttpRequest.newBuilder(URI.create(cfg.server + "/api/mclink/send"))
-                .timeout(Duration.ofSeconds(15))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
-                .build();
-        http.sendAsync(req, HttpResponse.BodyHandlers.ofString()).thenAccept(r -> {
-            if (r.statusCode() == 200) handleResponse(r.body());
-        }).exceptionally(e -> {
-            HvikLink.LOG.warn("HviK Link: Senden fehlgeschlagen: {}", e.toString());
-            return null;
-        });
+        if (running) outbox.add(event);
+    }
+
+    /** Schickt die Ereignisse in der richtigen Reihenfolge; was gleichzeitig anfällt, geht in einer Anfrage raus. */
+    private void sendLoop() {
+        while (running || !outbox.isEmpty()) {
+            try {
+                JsonObject first = outbox.poll(200, TimeUnit.MILLISECONDS);
+                if (first == null) continue;
+                JsonArray arr = new JsonArray();
+                arr.add(first);
+                JsonObject more;
+                while (arr.size() < 50 && (more = outbox.poll()) != null) arr.add(more);
+                JsonObject body = new JsonObject();
+                body.addProperty("token", cfg.token);
+                body.add("events", arr);
+                HttpRequest req = HttpRequest.newBuilder(URI.create(cfg.server + "/api/mclink/send"))
+                        .timeout(Duration.ofSeconds(15))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+                        .build();
+                HttpResponse<String> r = http.send(req, HttpResponse.BodyHandlers.ofString());
+                if (r.statusCode() == 200) handleResponse(r.body());
+            } catch (InterruptedException e) {
+                return;
+            } catch (Exception e) {
+                HvikLink.LOG.warn("HviK Link: Senden fehlgeschlagen: {}", e.toString());
+                sleep(500);
+            }
+        }
     }
 
     /** Lobby-Einstellungen holen, ohne als "im Spiel" zu zählen (für den Welt-Erstellen-Bildschirm). */
@@ -186,8 +220,16 @@ public final class LinkClient {
 
     private synchronized void handleResponse(String text) {
         JsonObject o = JsonParser.parseString(text).getAsJsonObject();
-        if (o.has("state")) applyState(o.getAsJsonObject("state"));
         double now = o.has("now") ? o.get("now").getAsDouble() : 0;
+        if (o.has("state")) {
+            JsonObject s = o.getAsJsonObject("state");
+            applyState(s);
+            if (now > 0 && s.has("started") && !s.get("started").isJsonNull()) {  // Startzeit in lokale Uhr umrechnen
+                startAtMs = System.currentTimeMillis() - Math.round((now - s.get("started").getAsDouble()) * 1000);
+            } else if (!s.has("started") || s.get("started").isJsonNull()) {
+                startAtMs = 0;
+            }
+        }
         if (o.has("events")) {
             for (JsonElement e : o.getAsJsonArray("events")) {
                 JsonObject ev = e.getAsJsonObject();
