@@ -61,6 +61,8 @@ public final class LinkClient {
     public record Podium(String name, String mcName, java.util.UUID uuid, int value) {}
     public volatile String afterChoice = null;
     public volatile boolean detached = false;
+    public volatile boolean oldMod = false;  // hvik.org hat eine neuere Mod
+    public volatile boolean resendWorld = false;  // aus "keine Lobby" in eine Lobby gekommen -> Welt-Infos nochmal schicken
     public volatile List<Member> members = List.of();
     public volatile int version = 0;  // ändert sich bei jedem neuen Zustand -> Lobby baut Knöpfe neu
 
@@ -192,6 +194,7 @@ public final class LinkClient {
                 JsonObject body = new JsonObject();
                 body.addProperty("token", cfg.token);
                 body.addProperty("since", seq);
+                body.addProperty("mod", HvikLink.MOD_SHA);
                 HttpRequest req = HttpRequest.newBuilder(URI.create(cfg.server + "/api/mclink/poll"))
                         .timeout(Duration.ofSeconds(40))
                         .header("Content-Type", "application/json")
@@ -235,6 +238,17 @@ public final class LinkClient {
     private synchronized void handleResponse(String text) {
         JsonObject o = JsonParser.parseString(text).getAsJsonObject();
         double now = o.has("now") ? o.get("now").getAsDouble() : 0;
+        if (o.has("idle") && o.get("idle").getAsBoolean()) {  // gerade in keiner Lobby -> ganz normal spielen
+            if (!"idle".equals(status)) {
+                status = "idle";
+                error = "";
+                members = List.of();
+                startAtMs = 0;
+                version++;
+            }
+            if (o.has("seq")) seq = Math.max(seq, o.get("seq").getAsLong());
+            return;
+        }
         if (o.has("state")) {
             JsonObject s = o.getAsJsonObject("state");
             applyState(s);
@@ -263,7 +277,9 @@ public final class LinkClient {
     }
 
     private void applyState(JsonObject s) {
+        if ("idle".equals(status)) resendWorld = true;
         status = s.get("status").getAsString();
+        oldMod = s.has("old_mod") && s.get("old_mod").getAsBoolean();
         linkName = s.has("name") ? s.get("name").getAsString() : "";
         host = s.has("host") && s.get("host").getAsBoolean();
         JsonObject set = s.getAsJsonObject("settings");

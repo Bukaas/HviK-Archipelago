@@ -97,7 +97,7 @@ public class ClientEvents {
             if (rem > 0) mc.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
                     net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HAT.value(), rem <= 3 ? 1.6f : 1.2f));
         }
-        boolean blocking = (!"running".equals(c.status) && !"ended".equals(c.status)) || c.countdown() > 0;
+        boolean blocking = (!"running".equals(c.status) && !"ended".equals(c.status) && !"idle".equals(c.status)) || c.countdown() > 0;
         if (blocking && !(mc.screen instanceof LobbyScreen)) mc.setScreen(new LobbyScreen());
     }
 

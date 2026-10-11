@@ -48,12 +48,17 @@ public class GameEvents {
             c.worldHardcore = sp.level().getLevelData().isHardcore();
             Grave.sync(sp);
             c.start();
-            JsonObject w = LinkClient.ev("world");
-            w.addProperty("hardcore", c.worldHardcore);
-            w.addProperty("mc_name", sp.getGameProfile().getName());  // für Skins auf Podium/Website
-            w.addProperty("mc_uuid", sp.getUUID().toString());
-            c.send(w);
+            sendWorld(sp, c);
         }
+    }
+
+    /** Welt-Infos an hvik.org: Hardcore ja/nein + Minecraft-Name/UUID (für Skins auf Podium/Website). */
+    static void sendWorld(ServerPlayer sp, LinkClient c) {
+        JsonObject w = LinkClient.ev("world");
+        w.addProperty("hardcore", sp.level().getLevelData().isHardcore());
+        w.addProperty("mc_name", sp.getGameProfile().getName());
+        w.addProperty("mc_uuid", sp.getUUID().toString());
+        c.send(w);
     }
 
     /** Softcore: nach dem Tod wieder gespawnt -> wieder dabei. Die vollen Herzen nach dem Respawn sind keine "Heilung". */
@@ -180,6 +185,10 @@ public class GameEvents {
         if (e.phase != TickEvent.Phase.END || !(e.player instanceof ServerPlayer sp)) return;
         LinkClient c = HvikLink.CLIENT;
         if (!c.active()) return;
+        if (c.resendWorld) {
+            c.resendWorld = false;
+            sendWorld(sp, c);
+        }
         JsonObject ev;
         while ((ev = c.effects.poll()) != null) apply(sp, ev);
         FoodData food = sp.getFoodData();
