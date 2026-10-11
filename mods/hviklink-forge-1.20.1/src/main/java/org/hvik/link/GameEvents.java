@@ -50,6 +50,16 @@ public class GameEvents {
         }
     }
 
+    /** Softcore: nach dem Tod wieder gespawnt -> wieder dabei. Die vollen Herzen nach dem Respawn sind keine "Heilung". */
+    @SubscribeEvent
+    public void onRespawn(PlayerEvent.PlayerRespawnEvent e) {
+        if (!(e.getEntity() instanceof ServerPlayer) || e.isEndConquered()) return;
+        lastHp = -1;
+        lastFood = -1;
+        LinkClient c = HvikLink.CLIENT;
+        if (c.active() && "running".equals(c.status)) c.send(LinkClient.ev("respawn"));
+    }
+
     @SubscribeEvent
     public void onStopping(ServerStoppingEvent e) {
         HvikLink.CLIENT.stop();
