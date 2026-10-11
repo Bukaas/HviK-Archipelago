@@ -241,6 +241,26 @@
     const cam = sc.camera;
     return {stands, cam, size: [sx, sy, sz]};
   }
+  // Rüstungsständer in Standardhaltung -> abwechslungsreiche Pose je nach Platz (feste Reihenfolge, Archiv sieht immer gleich aus)
+  const DEFAULT_POSE = {head: [0, 0, 0], left_arm: [-10, 0, -10], right_arm: [-15, 0, 10], left_leg: [-1, 0, -1], right_leg: [1, 0, 1]};
+  function isDefaultPose(pose){
+    if (!pose) return true;
+    return Object.entries(DEFAULT_POSE).every(([k, d]) => !pose[k] || pose[k].every((v, i) => Math.abs(v - d[i]) < 3));
+  }
+  const POSES = {
+    cheer:   {pose: {head: [-12, 0, 0], right_arm: [-165, 0, -28], left_arm: [-165, 0, 28]}, anim: 'cheer'},
+    wave:    {pose: {head: [-5, 0, 0], right_arm: [-150, 0, -30], left_arm: [-8, 0, -6]}, anim: 'wave'},
+    clap:    {pose: {right_arm: [-75, -28, 0], left_arm: [-75, 28, 0]}, anim: 'clap'},
+    fist:    {pose: {right_arm: [-172, 0, -10], left_arm: [-15, 0, -42]}},
+    crossed: {pose: {right_arm: [-55, -55, 5], left_arm: [-50, 55, -5], head: [0, 12, 0]}},
+    hips:    {pose: {right_arm: [-12, 0, 48], left_arm: [-12, 0, -48]}},
+    point:   {pose: {right_arm: [-95, 0, 0], left_arm: [-8, 0, -8]}, anim: 'look', point: true},
+    lookup:  {pose: {head: [-25, 0, 0], right_arm: [-20, 0, 12], left_arm: [-20, 0, -12]}, anim: 'look', lookAt: true},
+    thumbs:  {pose: {right_arm: [-70, 10, 0], left_arm: [-10, 0, -10]}},
+    relaxed: {pose: {right_arm: [-25, 0, 8], left_arm: [5, 0, -6], head: [5, 0, 4]}, anim: 'look'},
+  };
+  const ORDER = ['cheer', 'wave', 'clap', 'fist', 'crossed', 'hips', 'point', 'lookup', 'thumbs', 'relaxed', 'wave', 'clap'];
+
   // Pose eines Rüstungsständers auf die Figur (Minecraft: y nach unten, vorne = -z -> x gleich, y/z gespiegelt)
   function standPose(f, pose){
     const {head, rArm, lArm, rLeg, lLeg} = f.userData;
@@ -333,10 +353,27 @@
       const f = player(img);
       const s = sp[i];
       if (!s) return null;  // mehr Spieler als Plätze in der Szene
-      if (s.stand) {  // genau wie der Rüstungsständer
-        standPose(f, s.stand.pose || {});
+      if (s.stand) {  // wie der Rüstungsständer - Standardhaltung wird lebendiger
         f.position.set(s.x, s.y, s.z);
         f.rotation.y = -s.stand.yaw * Math.PI / 180;
+        if (isDefaultPose(s.stand.pose)) {
+          const pr = POSES[ORDER[i % ORDER.length]];
+          const pose = {...DEFAULT_POSE, ...(s.stand.pose || {}), ...pr.pose};
+          if ((pr.lookAt || pr.point) && i > 0 && sp[0]) {  // Kopf (und Arm) Richtung Sieger
+            const w = sp[0], dx = w.x - s.x, dz = w.z - s.z;
+            const rel = Math.atan2(dx, dz) - f.rotation.y;
+            const deg = -((((rel * 180 / Math.PI) + 540) % 360) - 180);
+            pose.head = [pr.lookAt ? -25 : -8, Math.max(-60, Math.min(60, deg)), 0];
+            if (pr.point) pose.right_arm = [-100, Math.max(-60, Math.min(60, deg)), 0];
+          }
+          standPose(f, pose);
+          f.userData.anim = pr.anim || 'idle';
+        } else {
+          standPose(f, s.stand.pose || {});
+          f.userData.anim = 'idle';
+        }
+        f.userData.rest = ['head', 'rArm', 'lArm'].map(k => f.userData[k].rotation.clone());
+        f.userData.seed = i * 1.7;
         if (s.stand.small) f.scale.setScalar(.5);
       } else {
         pose(f, s.pose);
@@ -389,6 +426,16 @@
         o.f.position.y = o.f.userData.base + (1 - k * k) * 40;  // fällt von oben auf seinen Platz
         o.l.style.opacity = k >= 1 ? 1 : 0;
         if (k >= 1 && o.i === 0 && !o.cheered) { o.cheered = true; box.dispatchEvent(new CustomEvent('hvp-winner')); }
+      });
+      figs.forEach(o => {  // kleine Bewegungen: winken, jubeln, klatschen, umschauen
+        if (!o || !o.f.userData.rest) return;
+        const u = o.f.userData, [h0, r0, l0] = u.rest, s = t / 1000 + u.seed;
+        u.head.rotation.y = h0.y + Math.sin(s * .7) * .12;
+        u.head.rotation.x = h0.x + Math.sin(s * .45) * .04;
+        if (u.anim === 'wave') u.rArm.rotation.z = r0.z - Math.sin(s * 6) * .35;
+        if (u.anim === 'cheer') { u.rArm.rotation.z = r0.z + Math.abs(Math.sin(s * 3)) * .22; u.lArm.rotation.z = l0.z - Math.abs(Math.sin(s * 3)) * .22; }
+        if (u.anim === 'clap') { const c = Math.abs(Math.sin(s * 5)) * .3; u.rArm.rotation.y = r0.y + c; u.lArm.rotation.y = l0.y - c; }
+        if (u.anim === 'idle' || u.anim === 'look') { u.rArm.rotation.z = r0.z + Math.sin(s * 1.3) * .03; u.lArm.rotation.z = l0.z - Math.sin(s * 1.3) * .03; }
       });
       if (dist) {  // leichte Kamerafahrt (nur in der eingebauten Welt)
         const a = Math.sin(t / 5200) * .06;
