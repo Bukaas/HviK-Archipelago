@@ -101,6 +101,7 @@ public class LobbyScreen extends Screen {
             String set = "Geteilt: " + (c.shareDamage ? "Schaden " : "") + (c.shareHeal ? "Heilung " : "") + (c.shareHunger ? "Hunger " : "")
                     + (c.deathLink ? "– Death Link an" : "– Death Link aus");
             g.drawCenteredString(font, set, cx, y + 8, 0xAAAAAA);
+            if (!c.goalType.isEmpty()) g.drawCenteredString(font, "⚑ Ziel: " + c.goalLabel + " – wer es zuerst schafft, gewinnt!", cx, y + 20, 0xFFFF55);
         }
         super.render(g, mouseX, mouseY, partialTick);
     }

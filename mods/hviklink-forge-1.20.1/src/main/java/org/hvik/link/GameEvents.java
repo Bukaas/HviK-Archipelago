@@ -1,7 +1,13 @@
 package org.hvik.link;
 
 import com.google.gson.JsonObject;
+import net.minecraft.advancements.Advancement;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.stats.Stats;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -25,6 +31,10 @@ public class GameEvents {
     private boolean linkKill = false;
     private String lastReason = "";
     private int statusTimer = 0;
+    private boolean wasRunning = false;
+    private int baseAdv = 0, baseKills = 0, lastProgress = -1;
+    private boolean goalSent = false;
+    private int advTimer = 0;
 
     @SubscribeEvent
     public void onLogin(PlayerEvent.PlayerLoggedInEvent e) {
@@ -68,11 +78,20 @@ public class GameEvents {
         JsonObject ev;
         while ((ev = c.effects.poll()) != null) apply(sp, ev);
         FoodData food = sp.getFoodData();
+        if (!"running".equals(c.status)) wasRunning = false;
         if (!"running".equals(c.status) || !sp.isAlive()) {
             lastHp = sp.getHealth();
             lastFood = food.getFoodLevel();
             return;
         }
+        if (!wasRunning) {  // gerade gestartet: Ausgangswerte für das Ziel merken (zählt ab Start)
+            wasRunning = true;
+            baseAdv = advancements(sp);
+            baseKills = kills(sp, c.goalTarget);
+            lastProgress = -1;
+            goalSent = false;
+        }
+        if (statusTimer % 20 == 0 && !c.goalType.isEmpty() && !goalSent) checkGoal(sp, c);
         float h = sp.getHealth();
         if (lastHp >= 0 && Math.abs(h - lastHp) > 0.001f) {
             float d = h - lastHp;
@@ -97,6 +116,15 @@ public class GameEvents {
             o.addProperty("hp", h);
             o.addProperty("max", sp.getMaxHealth());
             o.addProperty("food", f);
+            // Statistik fürs HviK-Profil (Welt-Gesamtwerte - die Website zählt nur den Zuwachs)
+            o.addProperty("play", stat(sp, Stats.PLAY_TIME) / 20);
+            o.addProperty("kills", stat(sp, Stats.MOB_KILLS));
+            o.addProperty("dist", (stat(sp, Stats.WALK_ONE_CM) + stat(sp, Stats.SPRINT_ONE_CM) + stat(sp, Stats.CROUCH_ONE_CM)
+                    + stat(sp, Stats.SWIM_ONE_CM) + stat(sp, Stats.WALK_UNDER_WATER_ONE_CM) + stat(sp, Stats.WALK_ON_WATER_ONE_CM)) / 100);
+            if (++advTimer >= 15) {  // alle 30 s - Achievements seit dem Start
+                advTimer = 0;
+                o.addProperty("adv", Math.max(0, advancements(sp) - baseAdv));
+            }
             c.send(o);
         }
     }
@@ -131,6 +159,50 @@ public class GameEvents {
             }
             default -> { }
         }
+    }
+
+    private void checkGoal(ServerPlayer sp, LinkClient c) {
+        int progress = switch (c.goalType) {
+            case "item" -> {
+                ResourceLocation rl = ResourceLocation.tryParse(c.goalTarget);
+                Item item = rl == null ? null : ForgeRegistries.ITEMS.getValue(rl);
+                yield item == null ? 0 : sp.getInventory().countItem(item);
+            }
+            case "advancements" -> Math.max(0, advancements(sp) - baseAdv);
+            case "kills" -> Math.max(0, kills(sp, c.goalTarget) - baseKills);
+            default -> 0;
+        };
+        if (progress != lastProgress) {
+            lastProgress = progress;
+            JsonObject o = LinkClient.ev("progress");
+            o.addProperty("value", progress);
+            c.send(o);
+        }
+        if (c.goalCount > 0 && progress >= c.goalCount) {
+            goalSent = true;
+            c.send(LinkClient.ev("goal"));
+        }
+    }
+
+    private static int stat(ServerPlayer sp, ResourceLocation key) {
+        return sp.getStats().getValue(Stats.CUSTOM.get(key));
+    }
+
+    /** Erledigte Achievements (nur sichtbare - keine Rezepte). */
+    private static int advancements(ServerPlayer sp) {
+        int n = 0;
+        for (Advancement a : sp.server.getAdvancements().getAllAdvancements()) {
+            if (a.getDisplay() != null && sp.getAdvancements().getOrStartProgress(a).isDone()) n++;
+        }
+        return n;
+    }
+
+    /** Getötete Monster: alle oder nur eine Art (Entity-ID wie minecraft:zombie). */
+    private static int kills(ServerPlayer sp, String target) {
+        if (target == null || target.isEmpty()) return sp.getStats().getValue(Stats.CUSTOM.get(Stats.MOB_KILLS));
+        ResourceLocation rl = ResourceLocation.tryParse(target);
+        EntityType<?> type = rl == null ? null : ForgeRegistries.ENTITY_TYPES.getValue(rl);
+        return type == null ? 0 : sp.getStats().getValue(Stats.ENTITY_KILLED.get(type));
     }
 
     private static String reason(DamageSource s) {

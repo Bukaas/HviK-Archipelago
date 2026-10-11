@@ -36,10 +36,14 @@ public final class LinkClient {
     public volatile boolean host = false;
     public volatile boolean meReady = false;
     public volatile boolean shareDamage = true, shareHeal = false, deathLink = true, shareHunger = false;
+    /** Ziel (optional): type = "" | item | advancements | kills; target = Item-ID bzw. Monster-ID (leer = alle). */
+    public volatile String goalType = "", goalTarget = "", goalLabel = "";
+    public volatile int goalCount = 0;
+    public volatile String winner = "";
     public volatile List<Member> members = List.of();
     public volatile int version = 0;  // ändert sich bei jedem neuen Zustand -> Lobby baut Knöpfe neu
 
-    public record Member(String name, String pack, boolean ready, boolean online, float hp, float max, int food, boolean dead, boolean host) {}
+    public record Member(String name, String pack, boolean ready, boolean online, float hp, float max, int food, boolean dead, boolean host, int progress) {}
 
     public LinkClient(LinkConfig cfg) {
         this.cfg = cfg;
@@ -179,6 +183,12 @@ public final class LinkClient {
         shareHeal = set.get("share_heal").getAsBoolean();
         deathLink = set.get("death_link").getAsBoolean();
         shareHunger = set.get("share_hunger").getAsBoolean();
+        JsonObject goal = set.has("goal") && set.get("goal").isJsonObject() ? set.getAsJsonObject("goal") : null;
+        goalType = goal != null && goal.has("type") ? goal.get("type").getAsString() : "";
+        goalTarget = goal != null && goal.has("target") ? goal.get("target").getAsString() : "";
+        goalCount = goal != null && goal.has("count") ? goal.get("count").getAsInt() : 0;
+        goalLabel = s.has("goal_label") && !s.get("goal_label").isJsonNull() ? s.get("goal_label").getAsString() : "";
+        winner = s.has("winner") && !s.get("winner").isJsonNull() ? s.get("winner").getAsString() : "";
         List<Member> list = new ArrayList<>();
         for (JsonElement e : s.getAsJsonArray("members")) {
             JsonObject m = e.getAsJsonObject();
@@ -187,7 +197,8 @@ public final class LinkClient {
                     m.has("hp") && !m.get("hp").isJsonNull() ? m.get("hp").getAsFloat() : -1,
                     m.has("max") && !m.get("max").isJsonNull() ? m.get("max").getAsFloat() : 20,
                     m.has("food") && !m.get("food").isJsonNull() ? m.get("food").getAsInt() : -1,
-                    m.get("dead").getAsBoolean(), m.get("host").getAsBoolean());
+                    m.get("dead").getAsBoolean(), m.get("host").getAsBoolean(),
+                    m.has("progress") && !m.get("progress").isJsonNull() ? m.get("progress").getAsInt() : 0);
             list.add(mem);
             if (mem.name().equals(cfg.name)) meReady = mem.ready();
         }
