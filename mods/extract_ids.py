@@ -35,6 +35,7 @@ class Source:
 
     def __init__(self):
         self.en, self.de, self.models, self.modnames = {}, {}, set(), {"minecraft": "Minecraft"}
+        self.advs = {}  # id -> (title, description) als Text-Komponenten
 
     def file(self, name: str, read):
         m = re.match(r"assets/([^/]+)/lang/(en_us|de_de)\.json$", name)
@@ -44,6 +45,16 @@ class Source:
         m = re.match(r"assets/([^/]+)/(?:models/item|items)/([a-z0-9_/]+)\.json$", name)
         if m:
             self.models.add(f"{m.group(1)}:{m.group(2)}")
+            return
+        m = re.match(r"data/([^/]+)/advancements?/([a-z0-9_/]+)\.json$", name)
+        if m and not m.group(2).startswith("recipes/"):
+            try:
+                d = json.loads(read().decode("utf-8-sig", "replace"))
+            except ValueError:
+                return
+            disp = d.get("display") if isinstance(d, dict) else None
+            if isinstance(disp, dict) and disp.get("title") and not disp.get("hidden") and d.get("parent", "x"):
+                self.advs[f"{m.group(1)}:{m.group(2)}"] = (disp.get("title"), disp.get("description"))
             return
         if name in ("META-INF/mods.toml", "META-INF/neoforge.mods.toml"):
             try:
@@ -114,9 +125,26 @@ def build(slug: str, folder: str, version: str):
     # Monster = Wesen mit Spawn-Ei (filtert Pfeile, Boote, Loren ...); Bosse ohne Ei per Hand
     bosses = {"minecraft:ender_dragon", "minecraft:wither", "minecraft:warden", "minecraft:elder_guardian"}
     mobs = {k: v for k, v in mobs.items() if f"{k}_spawn_egg" in items or k in bosses or f"{k.split(':')[0]}:spawn_egg_{k.split(':')[1]}" in items}
-    data = {"items": sorted(items.values()), "mobs": sorted(mobs.values())}
+    def text(comp, lang):
+        if isinstance(comp, str):
+            return comp
+        if isinstance(comp, dict):
+            if "translate" in comp:
+                return lang.get(comp["translate"]) or src.en.get(comp["translate"]) or comp.get("fallback") or ""
+            return str(comp.get("text") or "")
+        if isinstance(comp, list):
+            return "".join(text(c, lang) for c in comp)
+        return ""
+    advs = []
+    for rid, (title, desc) in src.advs.items():
+        en, de = text(title, src.en), text(title, src.de)
+        if not en or "%" in en:
+            continue
+        advs.append([rid, de if de != en else "", en, src.modnames.get(rid.split(":")[0], rid.split(":")[0]),
+                     text(desc, src.de) or text(desc, src.en)])
+    data = {"items": sorted(items.values()), "mobs": sorted(mobs.values()), "advs": sorted(advs)}
     (OUT / f"{slug}.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"{slug}: {len(jars)} Mods, {len(items)} Items, {len(mobs)} Monster, "
+    print(f"{slug}: {len(jars)} Mods, {len(items)} Items, {len(mobs)} Monster, {len(advs)} Achievements, "
           f"{len([1 for r in items.values() if r[1]])} mit deutschem Namen, {(OUT / f'{slug}.json').stat().st_size // 1024} KB")
 
 

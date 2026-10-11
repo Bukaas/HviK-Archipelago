@@ -95,7 +95,7 @@ public class GameEvents {
         float h = sp.getHealth();
         if (lastHp >= 0 && Math.abs(h - lastHp) > 0.001f) {
             float d = h - lastHp;
-            if ((d < 0 && c.shareDamage) || (d > 0 && c.shareHeal)) {
+            if ((d < 0 && c.shareDamage) || (d > 0 && c.shareHeal) || c.shareHearts) {
                 JsonObject o = LinkClient.ev("hp");
                 o.addProperty("delta", d);
                 if (d < 0) o.addProperty("reason", lastReason);
@@ -146,6 +146,19 @@ public class GameEvents {
                 }
                 lastHp = sp.getHealth();
             }
+            case "sethp" -> {  // Herzen teilen: gemeinsame Lebensleiste
+                if (!sp.isAlive()) return;
+                float v = ev.get("hp").getAsFloat();
+                if (v <= 0) {
+                    linkKill = true;
+                    sp.kill();
+                } else {
+                    float nh = Math.min(sp.getMaxHealth(), v);
+                    if (nh < sp.getHealth() - 0.01f) sp.level().playSound(null, sp.blockPosition(), SoundEvents.PLAYER_HURT, SoundSource.PLAYERS, 1f, 1f);
+                    sp.setHealth(nh);
+                }
+                lastHp = sp.getHealth();
+            }
             case "food" -> {
                 FoodData fd = sp.getFoodData();
                 fd.setFoodLevel(Math.max(0, Math.min(20, fd.getFoodLevel() + ev.get("delta").getAsInt())));
@@ -169,6 +182,11 @@ public class GameEvents {
                 yield item == null ? 0 : sp.getInventory().countItem(item);
             }
             case "advancements" -> Math.max(0, advancements(sp) - baseAdv);
+            case "advancement" -> {  // ein bestimmtes Achievement
+                ResourceLocation rl = ResourceLocation.tryParse(c.goalTarget);
+                Advancement a = rl == null ? null : sp.server.getAdvancements().getAdvancement(rl);
+                yield a != null && sp.getAdvancements().getOrStartProgress(a).isDone() ? 1 : 0;
+            }
             case "kills" -> Math.max(0, kills(sp, c.goalTarget) - baseKills);
             default -> 0;
         };

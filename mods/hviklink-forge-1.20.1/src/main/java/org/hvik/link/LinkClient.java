@@ -35,7 +35,7 @@ public final class LinkClient {
     public volatile String linkName = "";
     public volatile boolean host = false;
     public volatile boolean meReady = false;
-    public volatile boolean shareDamage = true, shareHeal = false, deathLink = true, shareHunger = false;
+    public volatile boolean shareDamage = false, shareHeal = false, deathLink = false, shareHunger = false, shareHearts = false;
     /** Ziel (optional): type = "" | item | advancements | kills; target = Item-ID bzw. Monster-ID (leer = alle). */
     public volatile String goalType = "", goalTarget = "", goalLabel = "";
     public volatile int goalCount = 0;
@@ -183,6 +183,7 @@ public final class LinkClient {
         shareHeal = set.get("share_heal").getAsBoolean();
         deathLink = set.get("death_link").getAsBoolean();
         shareHunger = set.get("share_hunger").getAsBoolean();
+        shareHearts = set.has("share_hearts") && set.get("share_hearts").getAsBoolean();
         JsonObject goal = set.has("goal") && set.get("goal").isJsonObject() ? set.getAsJsonObject("goal") : null;
         goalType = goal != null && goal.has("type") ? goal.get("type").getAsString() : "";
         goalTarget = goal != null && goal.has("target") ? goal.get("target").getAsString() : "";
