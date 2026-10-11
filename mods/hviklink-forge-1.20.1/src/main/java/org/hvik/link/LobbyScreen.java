@@ -26,11 +26,14 @@ public class LobbyScreen extends Screen {
         int cx = width / 2;
         int y = height - 58;
         if ("lobby".equals(c.status)) {
-            addRenderableWidget(Button.builder(Component.literal(c.meReady ? "Doch nicht bereit" : "Bereit ✔"), b -> {
+            Button ready = Button.builder(Component.literal(c.meReady ? "Doch nicht bereit" : "Bereit ✔"), b -> {
                 JsonObject o = LinkClient.ev("ready");
                 o.addProperty("ready", !c.meReady);
+                if (c.worldHardcore != null) o.addProperty("hardcore", c.worldHardcore);
                 c.send(o);
-            }).bounds(c.host ? cx - 102 : cx - 100, y, c.host ? 100 : 200, 20).build());
+            }).bounds(c.host ? cx - 102 : cx - 100, y, c.host ? 100 : 200, 20).build();
+            ready.active = !wrongWorld(c);
+            addRenderableWidget(ready);
             if (c.host) {
                 Button start = Button.builder(Component.literal("Start ▶"), b -> c.send(LinkClient.ev("start")))
                         .bounds(cx + 2, y, 100, 20).build();
@@ -50,6 +53,11 @@ public class LobbyScreen extends Screen {
             }
         }
         addRenderableWidget(Button.builder(Component.literal("Welt verlassen"), b -> leave()).bounds(cx - 100, height - 30, 200, 20).build());
+    }
+
+    /** Lobby Hardcore, Welt Softcore (oder umgekehrt) -> diese Welt geht nicht. */
+    static boolean wrongWorld(LinkClient c) {
+        return c.worldHardcore != null && c.worldHardcore != c.hardcore;
     }
 
     private static boolean allReady(LinkClient c) {
@@ -75,10 +83,15 @@ public class LobbyScreen extends Screen {
         renderBackground(g);
         LinkClient c = HvikLink.CLIENT;
         int cx = width / 2;
-        g.drawCenteredString(font, "HviK Link" + (c.linkName.isEmpty() ? "" : " – " + c.linkName), cx, 16, 0xFFAA00);
+        g.drawCenteredString(font, "HviK Link" + (c.linkName.isEmpty() ? "" : " – " + c.linkName) + (c.hardcore ? "  ☠ HARDCORE" : "  ❤ Softcore"),
+                cx, 16, 0xFFAA00);
         String info;
         int infoColor = 0xCCCCCC;
-        if ("lobby".equals(c.status)) {
+        if ("lobby".equals(c.status) && wrongWorld(c)) {
+            info = c.hardcore ? "Diese Lobby ist HARDCORE – das hier ist keine Hardcore-Welt. Bitte Welt verlassen und eine neue Hardcore-Welt erstellen."
+                    : "Diese Lobby ist SOFTCORE – das hier ist eine Hardcore-Welt. Bitte Welt verlassen und eine neue normale Welt erstellen.";
+            infoColor = 0xFF5555;
+        } else if ("lobby".equals(c.status)) {
             info = c.host ? "Du bist Host: Einstellungen wählen und starten, wenn alle bereit sind."
                     : "Das Spiel ist pausiert, bis alle bereit sind und der Host startet.";
         } else if ("error".equals(c.status)) {

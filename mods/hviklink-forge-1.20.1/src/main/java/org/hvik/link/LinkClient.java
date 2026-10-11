@@ -40,6 +40,9 @@ public final class LinkClient {
     public volatile String goalType = "", goalTarget = "", goalLabel = "";
     public volatile int goalCount = 0;
     public volatile String winner = "";
+    /** Lobby ist Hardcore (sonst Softcore). worldHardcore = Art der geladenen Welt (null = noch keine). */
+    public volatile boolean hardcore = false, infoLoaded = false;
+    public volatile Boolean worldHardcore = null;
     public volatile List<Member> members = List.of();
     public volatile int version = 0;  // ändert sich bei jedem neuen Zustand -> Lobby baut Knöpfe neu
 
@@ -101,6 +104,25 @@ public final class LinkClient {
             HvikLink.LOG.warn("HviK Link: Senden fehlgeschlagen: {}", e.toString());
             return null;
         });
+    }
+
+    /** Lobby-Einstellungen holen, ohne als "im Spiel" zu zählen (für den Welt-Erstellen-Bildschirm). */
+    public void fetchInfo() {
+        if (!cfg.usable()) return;
+        JsonObject body = new JsonObject();
+        body.addProperty("token", cfg.token);
+        HttpRequest req = HttpRequest.newBuilder(URI.create(cfg.server + "/api/mclink/info"))
+                .timeout(Duration.ofSeconds(10))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+                .build();
+        http.sendAsync(req, HttpResponse.BodyHandlers.ofString()).thenAccept(r -> {
+            if (r.statusCode() != 200) return;
+            JsonObject o = JsonParser.parseString(r.body()).getAsJsonObject();
+            hardcore = o.has("hardcore") && o.get("hardcore").getAsBoolean();
+            if (o.has("name")) linkName = o.get("name").getAsString();
+            infoLoaded = true;
+        }).exceptionally(e -> null);
     }
 
     public static JsonObject ev(String type) {
@@ -184,6 +206,8 @@ public final class LinkClient {
         deathLink = set.get("death_link").getAsBoolean();
         shareHunger = set.get("share_hunger").getAsBoolean();
         shareHearts = set.has("share_hearts") && set.get("share_hearts").getAsBoolean();
+        hardcore = set.has("hardcore") && !set.get("hardcore").isJsonNull() && set.get("hardcore").getAsBoolean();
+        infoLoaded = true;
         JsonObject goal = set.has("goal") && set.get("goal").isJsonObject() ? set.getAsJsonObject("goal") : null;
         goalType = goal != null && goal.has("type") ? goal.get("type").getAsString() : "";
         goalTarget = goal != null && goal.has("target") ? goal.get("target").getAsString() : "";

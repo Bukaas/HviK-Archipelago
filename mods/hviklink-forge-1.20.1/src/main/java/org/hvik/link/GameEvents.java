@@ -41,13 +41,19 @@ public class GameEvents {
         if (e.getEntity() instanceof ServerPlayer sp) {
             lastHp = sp.getHealth();
             lastFood = sp.getFoodData().getFoodLevel();
-            HvikLink.CLIENT.start();
+            LinkClient c = HvikLink.CLIENT;
+            c.worldHardcore = sp.level().getLevelData().isHardcore();
+            c.start();
+            JsonObject w = LinkClient.ev("world");
+            w.addProperty("hardcore", c.worldHardcore);
+            c.send(w);
         }
     }
 
     @SubscribeEvent
     public void onStopping(ServerStoppingEvent e) {
         HvikLink.CLIENT.stop();
+        HvikLink.CLIENT.worldHardcore = null;
     }
 
     @SubscribeEvent
