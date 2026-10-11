@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 
 CF = Path(os.environ["USERPROFILE"]) / "curseforge" / "minecraft"
-PACKS = {"cube-warper": ("Cube Warper", "1.20.1"), "atm10": ("All the Mods 10 - ATM10", "1.21.1"),
+PACKS = {"vanilla": (None, "1.20.1"), "cube-warper": ("Cube Warper", "1.20.1"), "atm10": ("All the Mods 10 - ATM10", "1.21.1"),
          "atm11": ("All the Mods 11 - ATM11", "26.1.2")}
 KEY = re.compile(r"^(item|block|entity)\.([a-z0-9_-]+)\.([a-z0-9_/]+)$")
 OUT = Path(__file__).parent / "items"
@@ -99,8 +99,8 @@ def vanilla(src: Source, version: str):
 def build(slug: str, folder: str, version: str):
     src = Source()
     vanilla(src, version)
-    inst = CF / "Instances" / folder
-    jars = sorted((inst / "mods").glob("*.jar"))
+    inst = CF / "Instances" / (folder or "_keins_")
+    jars = sorted((inst / "mods").glob("*.jar")) if folder else []
     for j in jars:
         src.jar(j)
     if (inst / "kubejs" / "assets").is_dir():

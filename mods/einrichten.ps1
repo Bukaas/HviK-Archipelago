@@ -34,48 +34,65 @@ if (-not $roots) {
     $roots = @($dlg.SelectedPath)
 }
 
-# Profile dieses Modpacks finden (ohne unsere Kopien)
-$found = @()
-foreach ($root in $roots) {
-    foreach ($dir in Get-ChildItem $root -Directory -ErrorAction SilentlyContinue) {
-        $f = Join-Path $dir.FullName "minecraftinstance.json"
-        if (-not (Test-Path $f) -or $dir.Name.EndsWith($suffix)) { continue }
-        $raw = Get-Content $f -Raw
-        $byId = $raw -match ('"(addonID|projectID)"\s*:\s*' + $pack.cf_project + '\b')
-        $byName = $dir.Name -like "$($pack.name)*"
-        if ($byId -or $byName) { $found += $dir }
+if ($pack.vanilla) {
+    # Vanilla: neues, leeres CurseForge-Profil (Forge + nur unsere Mod) aus der Vorlage anlegen
+    $dstName = "Vanilla $($pack.mc)$suffix"
+    $dst = Join-Path (@($roots)[0]) $dstName
+    if (-not (Test-Path (Join-Path $dst "minecraftinstance.json"))) {
+        New-Item -ItemType Directory -Force $dst | Out-Null
+        $tpl = [IO.File]::ReadAllText((Join-Path $here "instance.json"), [Text.Encoding]::UTF8)
+        $tpl = $tpl.Replace("__NAME__", $dstName).Replace("__PATH__", ($dst.TrimEnd('\') + '\').Replace('\', '\\'))
+        $tpl = $tpl.Replace("__GUID__", [guid]::NewGuid().ToString()).Replace("__DATE__", (Get-Date).ToUniversalTime().ToString("o"))
+        [IO.File]::WriteAllText((Join-Path $dst "minecraftinstance.json"), $tpl, (New-Object Text.UTF8Encoding $false))
+        Ok "Neues CurseForge-Profil '$dstName' angelegt (Minecraft $($pack.mc) mit Forge - nur die HviK-Link-Mod, sonst Vanilla)."
+        Say "Beim ersten Start laedt CurseForge Minecraft/Forge selbst nach - das dauert einen Moment."
+    } else {
+        Ok "Profil '$dstName' gibt es schon - ich aktualisiere nur die Mod."
     }
-}
-if (-not $found) {
-    Say "$($pack.name) ist in CurseForge noch nicht installiert." Yellow
-    if ($pack.cf_file) { Start-Process "curseforge://install?addonId=$($pack.cf_project)&fileId=$($pack.cf_file)" }
-    else { Start-Process "curseforge://install?addonId=$($pack.cf_project)" }
-    Fail "Ich habe die Installation in CurseForge geoeffnet. Danach CurseForge schliessen und EINRICHTEN.bat nochmal starten."
-}
-$src = $found[0]
-if ($found.Count -gt 1) {
-    Say "Mehrere Profile gefunden:"
-    for ($i = 0; $i -lt $found.Count; $i++) { Say "  [$($i + 1)] $($found[$i].Name)" }
-    $pick = Read-Host "  Welches kopieren? (Nummer)"
-    if ($pick -match '^\d+$' -and [int]$pick -ge 1 -and [int]$pick -le $found.Count) { $src = $found[[int]$pick - 1] }
-}
-Ok "Modpack gefunden: $($src.FullName)"
-
-$dstName = $src.Name + $suffix
-$dst = Join-Path $src.Parent.FullName $dstName
-if (-not (Test-Path $dst)) {
-    Say "Kopiere das Profil nach '$dstName' (ohne Welten, das kann ein paar Minuten dauern) ..."
-    & robocopy $src.FullName $dst /E /XD saves logs crash-reports screenshots backups simplebackups /NFL /NDL /NJH /NJS /NP /R:1 /W:1 | Out-Null
-    if ($LASTEXITCODE -ge 8) { Fail "Kopieren fehlgeschlagen (robocopy $LASTEXITCODE)." }
-    $jf = Join-Path $dst "minecraftinstance.json"
-    $j = Get-Content $jf -Raw | ConvertFrom-Json
-    $j.name = $dstName
-    if ($j.PSObject.Properties.Name -contains "installPath") { $j.installPath = $dst.TrimEnd('\') + '\' }
-    if ($j.PSObject.Properties.Name -contains "guid") { $j.guid = [guid]::NewGuid().ToString() }
-    [IO.File]::WriteAllText($jf, ($j | ConvertTo-Json -Depth 100 -Compress), (New-Object Text.UTF8Encoding $false))
-    Ok "Profil kopiert."
 } else {
-    Ok "Profil '$dstName' gibt es schon - ich aktualisiere nur die Mod."
+    # Profile dieses Modpacks finden (ohne unsere Kopien)
+    $found = @()
+    foreach ($root in $roots) {
+        foreach ($dir in Get-ChildItem $root -Directory -ErrorAction SilentlyContinue) {
+            $f = Join-Path $dir.FullName "minecraftinstance.json"
+            if (-not (Test-Path $f) -or $dir.Name.EndsWith($suffix)) { continue }
+            $raw = Get-Content $f -Raw
+            $byId = $raw -match ('"(addonID|projectID)"\s*:\s*' + $pack.cf_project + '\b')
+            $byName = $dir.Name -like "$($pack.name)*"
+            if ($byId -or $byName) { $found += $dir }
+        }
+    }
+    if (-not $found) {
+        Say "$($pack.name) ist in CurseForge noch nicht installiert." Yellow
+        if ($pack.cf_file) { Start-Process "curseforge://install?addonId=$($pack.cf_project)&fileId=$($pack.cf_file)" }
+        else { Start-Process "curseforge://install?addonId=$($pack.cf_project)" }
+        Fail "Ich habe die Installation in CurseForge geoeffnet. Danach CurseForge schliessen und EINRICHTEN.bat nochmal starten."
+    }
+    $src = $found[0]
+    if ($found.Count -gt 1) {
+        Say "Mehrere Profile gefunden:"
+        for ($i = 0; $i -lt $found.Count; $i++) { Say "  [$($i + 1)] $($found[$i].Name)" }
+        $pick = Read-Host "  Welches kopieren? (Nummer)"
+        if ($pick -match '^\d+$' -and [int]$pick -ge 1 -and [int]$pick -le $found.Count) { $src = $found[[int]$pick - 1] }
+    }
+    Ok "Modpack gefunden: $($src.FullName)"
+
+    $dstName = $src.Name + $suffix
+    $dst = Join-Path $src.Parent.FullName $dstName
+    if (-not (Test-Path $dst)) {
+        Say "Kopiere das Profil nach '$dstName' (ohne Welten, das kann ein paar Minuten dauern) ..."
+        & robocopy $src.FullName $dst /E /XD saves logs crash-reports screenshots backups simplebackups /NFL /NDL /NJH /NJS /NP /R:1 /W:1 | Out-Null
+        if ($LASTEXITCODE -ge 8) { Fail "Kopieren fehlgeschlagen (robocopy $LASTEXITCODE)." }
+        $jf = Join-Path $dst "minecraftinstance.json"
+        $j = Get-Content $jf -Raw | ConvertFrom-Json
+        $j.name = $dstName
+        if ($j.PSObject.Properties.Name -contains "installPath") { $j.installPath = $dst.TrimEnd('\') + '\' }
+        if ($j.PSObject.Properties.Name -contains "guid") { $j.guid = [guid]::NewGuid().ToString() }
+        [IO.File]::WriteAllText($jf, ($j | ConvertTo-Json -Depth 100 -Compress), (New-Object Text.UTF8Encoding $false))
+        Ok "Profil kopiert."
+    } else {
+        Ok "Profil '$dstName' gibt es schon - ich aktualisiere nur die Mod."
+    }
 }
 
 $mods = Join-Path $dst "mods"
