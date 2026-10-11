@@ -43,6 +43,10 @@ public final class LinkClient {
     /** Lobby ist Hardcore (sonst Softcore). worldHardcore = Art der geladenen Welt (null = noch keine). */
     public volatile boolean hardcore = false, infoLoaded = false;
     public volatile Boolean worldHardcore = null;
+    /** Season vorbei: Ergebnis-Zeilen vom Server; afterChoice = Wahl des Hosts (restart|continue|leave); detached = ohne Link weiter. */
+    public volatile List<String> endLines = List.of();
+    public volatile String afterChoice = null;
+    public volatile boolean detached = false;
     public volatile List<Member> members = List.of();
     public volatile int version = 0;  // ändert sich bei jedem neuen Zustand -> Lobby baut Knöpfe neu
 
@@ -183,13 +187,19 @@ public final class LinkClient {
     private synchronized void handleResponse(String text) {
         JsonObject o = JsonParser.parseString(text).getAsJsonObject();
         if (o.has("state")) applyState(o.getAsJsonObject("state"));
+        double now = o.has("now") ? o.get("now").getAsDouble() : 0;
         if (o.has("events")) {
             for (JsonElement e : o.getAsJsonArray("events")) {
                 JsonObject ev = e.getAsJsonObject();
                 long s = ev.has("seq") ? ev.get("seq").getAsLong() : 0;
                 if (s > seq) {
                     seq = s;
-                    effects.add(ev);
+                    if ("after".equals(ev.get("t").getAsString())) {  // Wahl des Hosts - nur frische (nicht beim späteren Wiederbetreten)
+                        double ts = ev.has("ts") ? ev.get("ts").getAsDouble() : 0;
+                        if (now == 0 || now - ts < 20) afterChoice = ev.get("choice").getAsString();
+                    } else {
+                        effects.add(ev);
+                    }
                 }
             }
         }
@@ -214,6 +224,11 @@ public final class LinkClient {
         goalCount = goal != null && goal.has("count") ? goal.get("count").getAsInt() : 0;
         goalLabel = s.has("goal_label") && !s.get("goal_label").isJsonNull() ? s.get("goal_label").getAsString() : "";
         winner = s.has("winner") && !s.get("winner").isJsonNull() ? s.get("winner").getAsString() : "";
+        List<String> lines = new ArrayList<>();
+        if (s.has("end_lines") && s.get("end_lines").isJsonArray()) {
+            for (JsonElement e : s.getAsJsonArray("end_lines")) lines.add(e.getAsString());
+        }
+        endLines = List.copyOf(lines);
         List<Member> list = new ArrayList<>();
         for (JsonElement e : s.getAsJsonArray("members")) {
             JsonObject m = e.getAsJsonObject();
