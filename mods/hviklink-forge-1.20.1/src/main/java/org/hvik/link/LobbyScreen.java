@@ -36,9 +36,8 @@ public class LobbyScreen extends Screen {
                         .bounds(cx + 2, y, 100, 20).build();
                 start.active = allReady(c);
                 addRenderableWidget(start);
-                String[][] opts = {{"share_damage", "Schaden"}, {"share_hearts", "Herzen"}, {"share_heal", "Heilung"}, {"share_hunger", "Hunger"},
-                        {"death_link", "Death Link"}};
-                boolean[] vals = {c.shareDamage, c.shareHearts, c.shareHeal, c.shareHunger, c.deathLink};
+                String[][] opts = {{"share_hearts", "Herzen"}, {"share_heal", "Heilung"}, {"share_hunger", "Hunger"}, {"death_link", "Death Link"}};
+                boolean[] vals = {c.shareHearts, c.shareHeal, c.shareHunger, c.deathLink};
                 for (int i = 0; i < opts.length; i++) {
                     String key = opts[i][0];
                     boolean val = vals[i];
@@ -46,7 +45,7 @@ public class LobbyScreen extends Screen {
                         JsonObject o = LinkClient.ev("settings");
                         o.addProperty(key, !val);
                         c.send(o);
-                    }).bounds(cx - 255 + i * 102, y - 26, 100, 20).build());
+                    }).bounds(cx - 204 + i * 102, y - 26, 100, 20).build());
                 }
             }
         }
@@ -99,7 +98,7 @@ public class LobbyScreen extends Screen {
             y += 12;
         }
         if ("lobby".equals(c.status)) {
-            String set = "Geteilt: " + (c.shareDamage ? "Schaden " : "") + (c.shareHearts ? "Herzen " : "") + (c.shareHeal ? "Heilung " : "")
+            String set = "Geteilt: " + (c.shareHearts ? "Herzen " : "") + (c.shareHeal ? "Heilung " : "")
                     + (c.shareHunger ? "Hunger " : "")
                     + (c.deathLink ? "– Death Link an" : "– Death Link aus");
             g.drawCenteredString(font, set, cx, y + 8, 0xAAAAAA);

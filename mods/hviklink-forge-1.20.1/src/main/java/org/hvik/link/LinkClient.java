@@ -179,7 +179,7 @@ public final class LinkClient {
         linkName = s.has("name") ? s.get("name").getAsString() : "";
         host = s.has("host") && s.get("host").getAsBoolean();
         JsonObject set = s.getAsJsonObject("settings");
-        shareDamage = set.get("share_damage").getAsBoolean();
+        shareDamage = set.has("share_damage") && set.get("share_damage").getAsBoolean();  // alter Perk, steckt in "Herzen teilen"
         shareHeal = set.get("share_heal").getAsBoolean();
         deathLink = set.get("death_link").getAsBoolean();
         shareHunger = set.get("share_hunger").getAsBoolean();
