@@ -58,6 +58,8 @@ public class GameEvents {
         w.addProperty("hardcore", sp.level().getLevelData().isHardcore());
         w.addProperty("mc_name", sp.getGameProfile().getName());
         w.addProperty("mc_uuid", sp.getUUID().toString());
+        w.addProperty("cheats", sp.server.getWorldData().getAllowCommands() || sp.server.getPlayerList().isAllowCheatsForAllPlayers());
+        w.addProperty("seed", String.valueOf(sp.serverLevel().getSeed()));
         c.send(w);
     }
 
@@ -75,6 +77,23 @@ public class GameEvents {
     public void onServerTick(TickEvent.ServerTickEvent e) {
         if (e.phase == TickEvent.Phase.END && e.getServer().getTickCount() % 10 == 0) Emotes.cleanSeats(e.getServer());
         if (e.phase == TickEvent.Phase.END && e.getServer().getTickCount() % 40 == 0) e.getServer().getPlayerList().getPlayers().forEach(Grave::check);
+        if (e.phase == TickEvent.Phase.END && e.getServer().getTickCount() % 20 == 0) enforceWorld(e.getServer());
+    }
+
+    /** Welteinstellungen vom Host durchsetzen: Schwierigkeit fest, keine Cheats (auch nicht über "Im LAN öffnen"). */
+    private static void enforceWorld(net.minecraft.server.MinecraftServer srv) {
+        LinkClient c = HvikLink.CLIENT;
+        if (!c.active() || c.detached || !("lobby".equals(c.status) || "running".equals(c.status))) return;
+        net.minecraft.world.Difficulty d = net.minecraft.world.Difficulty.byName(c.difficulty);
+        if (d != null && !srv.getWorldData().isHardcore() && srv.getWorldData().getDifficulty() != d) srv.setDifficulty(d, true);
+        if (!srv.getWorldData().isDifficultyLocked()) srv.setDifficultyLocked(true);
+        if (srv.getPlayerList().isAllowCheatsForAllPlayers()) {
+            srv.getPlayerList().setAllowCheatsForAllPlayers(false);
+            for (ServerPlayer p : srv.getPlayerList().getPlayers()) {
+                srv.getPlayerList().sendPlayerPermissionLevel(p);
+                p.sendSystemMessage(Component.literal("§cHviK Link: Cheats sind in dieser Runde aus."));
+            }
+        }
     }
 
     /** /backpack öffnet den Rucksack (wie Taste B). */

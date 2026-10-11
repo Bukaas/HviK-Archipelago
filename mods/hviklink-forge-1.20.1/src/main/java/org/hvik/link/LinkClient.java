@@ -54,7 +54,8 @@ public final class LinkClient {
     /** Zeitlimit der Runde in Minuten (0 = keins); Podium für "Wer hat am meisten?" (sortiert, erst am Ende). */
     public volatile int timeLimit = 0;
     public volatile boolean backpack = false;
-    public volatile String onDeath = "backpack";  // keep | backpack | lose - was man beim Tod behält
+    public volatile String onDeath = "backpack";
+    public volatile String difficulty = "normal", seedMode = "own", seed = "", wrongWhy = "";  // Welteinstellungen vom Host  // keep | backpack | lose - was man beim Tod behält
     public volatile String goalItemName = "";
     public volatile List<Podium> podium = List.of();
 
@@ -174,9 +175,16 @@ public final class LinkClient {
             if (r.statusCode() != 200) return;
             JsonObject o = JsonParser.parseString(r.body()).getAsJsonObject();
             hardcore = o.has("hardcore") && o.get("hardcore").getAsBoolean();
+            readWorld(o);
             if (o.has("name")) linkName = o.get("name").getAsString();
             infoLoaded = true;
         }).exceptionally(e -> null);
+    }
+
+    private void readWorld(JsonObject o) {
+        difficulty = o.has("difficulty") && !o.get("difficulty").isJsonNull() ? o.get("difficulty").getAsString() : "normal";
+        seedMode = o.has("seed_mode") && !o.get("seed_mode").isJsonNull() ? o.get("seed_mode").getAsString() : "own";
+        seed = o.has("seed") && !o.get("seed").isJsonNull() ? o.get("seed").getAsString() : "";
     }
 
     public static JsonObject ev(String type) {
@@ -280,6 +288,7 @@ public final class LinkClient {
         if ("idle".equals(status)) resendWorld = true;
         status = s.get("status").getAsString();
         oldMod = s.has("old_mod") && s.get("old_mod").getAsBoolean();
+        wrongWhy = s.has("wrong_why") && !s.get("wrong_why").isJsonNull() ? s.get("wrong_why").getAsString() : "";
         linkName = s.has("name") ? s.get("name").getAsString() : "";
         host = s.has("host") && s.get("host").getAsBoolean();
         JsonObject set = s.getAsJsonObject("settings");
@@ -298,6 +307,7 @@ public final class LinkClient {
         timeLimit = set.has("time_limit") && !set.get("time_limit").isJsonNull() ? set.get("time_limit").getAsInt() : 0;
         backpack = set.has("backpack") && !set.get("backpack").isJsonNull() && set.get("backpack").getAsBoolean();
         onDeath = set.has("on_death") && !set.get("on_death").isJsonNull() ? set.get("on_death").getAsString() : "backpack";
+        readWorld(set);
         goalItemName = s.has("goal_item_name") && !s.get("goal_item_name").isJsonNull() ? s.get("goal_item_name").getAsString() : "";
         List<Podium> pod = new ArrayList<>();
         if (s.has("podium") && s.get("podium").isJsonArray()) {

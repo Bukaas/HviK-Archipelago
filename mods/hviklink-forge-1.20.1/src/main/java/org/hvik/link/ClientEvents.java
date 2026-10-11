@@ -51,6 +51,11 @@ public class ClientEvents {
                 WorldCreationUiState ui = cws.getUiState();
                 WorldCreationUiState.SelectedGameMode cur = ui.getGameMode();
                 if (c.hardcore && cur != WorldCreationUiState.SelectedGameMode.HARDCORE) ui.setGameMode(WorldCreationUiState.SelectedGameMode.HARDCORE);
+                // Welteinstellungen vom Host: Schwierigkeit, keine Cheats, ggf. gleicher Seed für alle
+                net.minecraft.world.Difficulty d = net.minecraft.world.Difficulty.byName(c.difficulty);
+                if (d != null && !c.hardcore && ui.getDifficulty() != d) ui.setDifficulty(d);
+                if (ui.isAllowCheats()) ui.setAllowCheats(false);
+                if ("same".equals(c.seedMode) && !c.seed.isEmpty() && !c.seed.equals(ui.getSeed())) ui.setSeed(c.seed);
                 if (!c.hardcore && cur == WorldCreationUiState.SelectedGameMode.HARDCORE) ui.setGameMode(WorldCreationUiState.SelectedGameMode.SURVIVAL);
             }
             return;

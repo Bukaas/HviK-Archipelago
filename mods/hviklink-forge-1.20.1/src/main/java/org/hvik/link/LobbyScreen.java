@@ -36,7 +36,7 @@ public class LobbyScreen extends Screen {
                 if (c.worldHardcore != null) o.addProperty("hardcore", c.worldHardcore);
                 c.send(o);
             }).bounds(c.host ? cx - 102 : cx - 100, y, c.host ? 100 : 200, 20).build();
-            ready.active = !wrongWorld(c) && !c.oldMod;
+            ready.active = !wrongWorld(c) && !c.oldMod && c.wrongWhy.isEmpty();
             addRenderableWidget(ready);
             if (c.host) {
                 Button start = Button.builder(Component.literal("Start ▶"), b -> c.send(LinkClient.ev("start")))
@@ -113,7 +113,10 @@ public class LobbyScreen extends Screen {
                 cx, 16, 0xFFAA00);
         String info;
         int infoColor = 0xCCCCCC;
-        if ("lobby".equals(c.status) && c.oldMod) {
+        if ("lobby".equals(c.status) && !c.wrongWhy.isEmpty() && !wrongWorld(c)) {
+            info = "Diese Welt passt nicht zur Lobby (" + c.wrongWhy + "). Bitte Welt verlassen und eine NEUE Welt erstellen – die Mod stellt dabei alles richtig ein.";
+            infoColor = 0xFF5555;
+        } else if ("lobby".equals(c.status) && c.oldMod) {
             info = "Deine HviK-Link-Mod ist veraltet. Minecraft schließen und über die HviK-App (▶ Spielen) neu starten – dann ist sie aktuell.";
             infoColor = 0xFF5555;
         } else if ("lobby".equals(c.status) && wrongWorld(c)) {
