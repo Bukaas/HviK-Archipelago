@@ -69,8 +69,8 @@ public class LobbyScreen extends Screen {
     static String deathLabel(String m) {
         return switch (m) {
             case "keep" -> "Alles behalten";
-            case "lose" -> "Alles verlieren";
-            default -> "Nur Rucksack bleibt";
+            case "lose" -> "Alles ins Grab";
+            default -> "Rucksack bleibt, Rest ins Grab";
         };
     }
 

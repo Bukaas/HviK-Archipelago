@@ -156,10 +156,44 @@ public class ClientEvents {
         e.registerAboveAll("hviklink", (gui, graphics, partialTick, width, height) -> renderHud(graphics, width, height));
     }
 
+    private static final String[] ARROWS = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖"};
+
+    /** Pfeil zum nächsten eigenen Grab (oben in der Mitte) - nur Richtung und Entfernung, kein Teleport. */
+    private static void renderGrave(GuiGraphics g, Minecraft mc, int width) {
+        List<Grave.Spot> spots = Grave.spots;
+        if (spots.isEmpty() || mc.player == null || mc.level == null) return;
+        String dim = mc.level.dimension().location().toString();
+        Grave.Spot best = null;
+        double bestD = Double.MAX_VALUE;
+        for (Grave.Spot s : spots) {
+            if (!s.dim().equals(dim)) continue;
+            double d = mc.player.distanceToSqr(s.x() + .5, s.y(), s.z() + .5);
+            if (d < bestD) { bestD = d; best = s; }
+        }
+        String text;
+        if (best == null) {
+            text = "✝ Grab" + Grave.dimName(spots.get(spots.size() - 1).dim());
+        } else {
+            double dx = best.x() + .5 - mc.player.getX(), dz = best.z() + .5 - mc.player.getZ();
+            double target = Math.toDegrees(Math.atan2(-dx, dz));
+            double rel = net.minecraft.util.Mth.wrapDegrees(target - mc.player.getYRot());
+            int idx = Math.floorMod((int) Math.round(rel / 45.0), 8);
+            int dist = (int) Math.round(Math.sqrt(dx * dx + dz * dz));
+            int dy = best.y() - mc.player.getBlockY();
+            text = "✝ Grab  " + (dist < 2 ? "hier" : ARROWS[idx] + " " + dist + " m") + (Math.abs(dy) > 3 ? (dy > 0 ? "  ▲" : "  ▼") + Math.abs(dy) : "")
+                    + (spots.size() > 1 ? "  (" + spots.size() + " Gräber)" : "");
+        }
+        Font f = mc.font;
+        int w = f.width(text), x = (width - w) / 2, y = 4;
+        g.fill(x - 4, y - 2, x + w + 4, y + 10, 0x66000000);
+        g.drawString(f, text, x, y, 0xDDDDDD, false);
+    }
+
     /** Rangliste rechts am Rand (wie die Scoreboard-Seitenleiste): Ziel, Spieler mit Fortschritt und Herzen. */
     private static void renderHud(GuiGraphics g, int width, int height) {
         Minecraft mc = Minecraft.getInstance();
         LinkClient c = HvikLink.CLIENT;
+        if (!mc.options.hideGui && mc.screen == null) renderGrave(g, mc, width);
         if (!c.active() || !"running".equals(c.status) || c.detached || mc.options.hideGui) return;
         Font f = mc.font;
         boolean goal = !c.goalType.isEmpty();

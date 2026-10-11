@@ -46,6 +46,7 @@ public class GameEvents {
             lastFood = sp.getFoodData().getFoodLevel();
             LinkClient c = HvikLink.CLIENT;
             c.worldHardcore = sp.level().getLevelData().isHardcore();
+            Grave.sync(sp);
             c.start();
             JsonObject w = LinkClient.ev("world");
             w.addProperty("hardcore", c.worldHardcore);
@@ -68,6 +69,7 @@ public class GameEvents {
     @SubscribeEvent
     public void onServerTick(TickEvent.ServerTickEvent e) {
         if (e.phase == TickEvent.Phase.END && e.getServer().getTickCount() % 10 == 0) Emotes.cleanSeats(e.getServer());
+        if (e.phase == TickEvent.Phase.END && e.getServer().getTickCount() % 40 == 0) e.getServer().getPlayerList().getPlayers().forEach(Grave::check);
     }
 
     /** /backpack öffnet den Rucksack (wie Taste B). */
@@ -106,12 +108,21 @@ public class GameEvents {
         sp.getInventory().clearContent();
     }
 
-    /** "Nur Rucksack" / "Alles verlieren": Inventar verschwindet statt auf dem Boden zu liegen. */
-    @SubscribeEvent
+    /** "Nur Rucksack" / "Alles verlieren": Inventar (bei "Alles verlieren" auch der Rucksack) kommt ins Grab an der Todesstelle. */
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onDrops(LivingDropsEvent e) {
-        if (!(e.getEntity() instanceof ServerPlayer)) return;
+        if (e.isCanceled() || !(e.getEntity() instanceof ServerPlayer sp)) return;
         String m = deathMode();
-        if ("backpack".equals(m) || "lose".equals(m)) e.setCanceled(true);
+        if (!"backpack".equals(m) && !"lose".equals(m)) return;
+        java.util.List<net.minecraft.world.item.ItemStack> items = new java.util.ArrayList<>();
+        for (net.minecraft.world.entity.item.ItemEntity it : e.getDrops()) items.add(it.getItem().copy());
+        if ("lose".equals(m)) {
+            net.minecraft.world.SimpleContainer box = Backpack.load(sp);
+            for (int i = 0; i < box.getContainerSize(); i++) items.add(box.getItem(i).copy());
+            sp.getPersistentData().remove(Backpack.KEY);
+        }
+        e.setCanceled(true);
+        Grave.create(sp, items);
     }
 
     @SubscribeEvent
@@ -124,6 +135,7 @@ public class GameEvents {
     public void onClone(PlayerEvent.Clone e) {
         net.minecraft.nbt.CompoundTag old = e.getOriginal().getPersistentData();
         boolean death = e.isWasDeath();
+        if (old.contains(Grave.KEY)) e.getEntity().getPersistentData().put(Grave.KEY, old.getList(Grave.KEY, net.minecraft.nbt.Tag.TAG_COMPOUND).copy());
         if (old.contains(Backpack.KEY) && !(death && "lose".equals(deathMode())))
             e.getEntity().getPersistentData().put(Backpack.KEY, old.getCompound(Backpack.KEY).copy());
         if (death && old.contains(KEEP) && e.getEntity() instanceof ServerPlayer sp) {
@@ -140,6 +152,7 @@ public class GameEvents {
     public void onStopping(ServerStoppingEvent e) {
         HvikLink.CLIENT.stop();
         HvikLink.CLIENT.worldHardcore = null;
+        Grave.spots = java.util.List.of();
     }
 
     @SubscribeEvent
