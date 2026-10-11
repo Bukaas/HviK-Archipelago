@@ -167,6 +167,82 @@
       rArm.rotation.z = -.08; lArm.rotation.z = .08;
     }
   }
+  // ---------- Szene aus dem Spiel (/hvik szene) ----------
+  function b64img(data){
+    return new Promise(res => { if (!data) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = 'data:image/png;base64,' + data; });
+  }
+  // Seite einer Blockart: Textur(en) übereinander, gefärbt (Gras/Laub), erstes Bild bei animierten Texturen
+  function layered(layers, imgs){
+    const c = document.createElement('canvas'); c.width = c.height = 16;
+    const g = c.getContext('2d');
+    for (const l of layers) {
+      const img = imgs[l.tex];
+      if (!img) continue;
+      const tmp = document.createElement('canvas'); tmp.width = tmp.height = 16;
+      const tg = tmp.getContext('2d');
+      tg.imageSmoothingEnabled = false;
+      tg.drawImage(img, 0, 0, img.width, img.width, 0, 0, 16, 16);
+      if (l.tint != null) {
+        const d = tg.getImageData(0, 0, 16, 16), r = (l.tint >> 16 & 255) / 255, gg = (l.tint >> 8 & 255) / 255, b = (l.tint & 255) / 255;
+        for (let i = 0; i < d.data.length; i += 4) { d.data[i] *= r; d.data[i + 1] *= gg; d.data[i + 2] *= b; }
+        tg.putImageData(d, 0, 0);
+      }
+      g.drawImage(tmp, 0, 0);
+    }
+    const tx = new THREE.CanvasTexture(c); tx.magFilter = THREE.NearestFilter; tx.minFilter = THREE.NearestFilter;
+    return tx;
+  }
+  async function sceneWorld(scene, sc){
+    const names = Object.keys(sc.textures || {});
+    const imgs = {};
+    await Promise.all(names.map(async n => { imgs[n] = await b64img(sc.textures[n]); }));
+    const [sx, sy, sz] = sc.size;
+    const cells = {};  // Palette-Index -> Positionen
+    let i = 0;
+    for (let k = 0; k < sc.blocks.length; k += 2) {
+      const n = sc.blocks[k], id = sc.blocks[k + 1];
+      if (id) for (let j = 0; j < n; j++) {
+        const c = i + j, x = c % sx, z = Math.floor(c / sx) % sz, y = Math.floor(c / (sx * sz));
+        (cells[id] = cells[id] || []).push([x, y, z]);
+      }
+      i += n;
+    }
+    const m4 = new THREE.Matrix4(), rot = new THREE.Matrix4();
+    for (const [id, list] of Object.entries(cells)) {
+      const e = sc.palette[id];
+      if (!e || !e.faces) continue;
+      const transparent = !!e.transparent;
+      const mk = face => new THREE.MeshLambertMaterial({map: layered(e.faces[face] || e.faces.north || [], imgs), transparent, alphaTest: transparent ? .4 : 0,
+                                                       side: e.shape === 'cross' ? THREE.DoubleSide : THREE.FrontSide});
+      if (e.shape === 'cross') {  // Pflanzen, Fackeln: zwei gekreuzte Flächen
+        const geo = new THREE.PlaneGeometry(B, B), mtl = mk('north');
+        for (const ang of [Math.PI / 4, -Math.PI / 4]) {
+          const mesh = new THREE.InstancedMesh(geo, mtl, list.length);
+          rot.makeRotationY(ang);
+          list.forEach(([x, y, z], n) => { m4.makeTranslation((x + .5) * B, (y + .5) * B, (z + .5) * B).multiply(rot); mesh.setMatrixAt(n, m4); });
+          scene.add(mesh);
+        }
+        continue;
+      }
+      const y0 = e.y0 || 0, h = Math.max(.0625, (e.h || 1) - y0);
+      const geo = new THREE.BoxGeometry(B, h * B, B);
+      // Seiten: +x Osten, -x Westen, +y oben, -y unten, +z Süden, -z Norden
+      const mats = ['east', 'west', 'up', 'down', 'south', 'north'].map(mk);
+      const mesh = new THREE.InstancedMesh(geo, mats, list.length);
+      list.forEach(([x, y, z], n) => { m4.makeTranslation((x + .5) * B, (y + y0 + h / 2) * B, (z + .5) * B); mesh.setMatrixAt(n, m4); });
+      scene.add(mesh);
+    }
+    // Plätze: Rüstungsständer mit Namen "1", "2", ... (ohne Zahl hinten anstellen)
+    const stands = (sc.stands || []).slice().sort((a, b) => (parseInt(a.name) || 999) - (parseInt(b.name) || 999));
+    const cam = sc.camera;
+    return {stands, cam, size: [sx, sy, sz]};
+  }
+  // Pose eines Rüstungsständers auf die Figur (Minecraft: y nach unten, vorne = -z -> x gleich, y/z gespiegelt)
+  function standPose(f, pose){
+    const {head, rArm, lArm, rLeg, lLeg} = f.userData;
+    const set = (part, r) => { if (!r) return; part.rotation.order = 'ZYX'; part.rotation.set(r[0] * Math.PI / 180, -r[1] * Math.PI / 180, -r[2] * Math.PI / 180); };
+    set(head, pose.head); set(rArm, pose.right_arm); set(lArm, pose.left_arm); set(rLeg, pose.right_leg); set(lLeg, pose.left_leg);
+  }
   function loadImg(src){
     return new Promise(res => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
   }
@@ -191,6 +267,8 @@
   }
 
   window.hvikPodium = async function(box, players, opts = {}){
+    if (box._hvp) box._hvp.stop = true;  // vorige Szene in diesem Kasten beenden
+    const run = {stop: false}; box._hvp = run;
     box.classList.add('hvp');
     box.innerHTML = '';
     const Wd = box.clientWidth, Ht = box.clientHeight;
@@ -211,14 +289,25 @@
     const sun = new THREE.DirectionalLight(0xffffff, .55); sun.position.set(80, 160, 120); scene.add(sun);
     const back = new THREE.DirectionalLight(0xbcd0ff, .18); back.position.set(-100, 60, -80); scene.add(back);
     if (!T.grassTop) textures();
-    world(scene);
-    const cam = new THREE.PerspectiveCamera(34, Wd / Ht, 1, 1400);
-    const n = players.length, many = n > 10, dist = many ? 300 : 260;
-    cam.position.set(0, many ? 78 : 70, dist);
-    const look = new THREE.Vector3(0, many ? 44 : 42, many ? 20 : 10);
+    const n = players.length, many = n > 10;
+    let dist = many ? 300 : 260, sp, look, cam;
+    const custom = opts.scene ? await sceneWorld(scene, opts.scene) : null;
+    if (custom) {  // eure Szene: Kamera = Blick beim Export, Plätze = Rüstungsständer
+      cam = new THREE.PerspectiveCamera(55, Wd / Ht, 1, 4000);
+      const c = custom.cam, yaw = c.yaw * Math.PI / 180, pitch = c.pitch * Math.PI / 180;
+      cam.position.set(c.x * B, c.y * B, c.z * B);
+      look = new THREE.Vector3(c.x * B - Math.sin(yaw) * Math.cos(pitch) * 100, c.y * B - Math.sin(pitch) * 100, c.z * B + Math.cos(yaw) * Math.cos(pitch) * 100);
+      dist = 0;
+      sp = custom.stands.slice(0, n).map(s => ({x: s.x * B, y: s.y * B, z: s.z * B, pose: 'stand', stand: s}));
+      scene.fog = new THREE.Fog(0x8ab8ff, 700, 2600);
+    } else {
+      world(scene);
+      cam = new THREE.PerspectiveCamera(34, Wd / Ht, 1, 1400);
+      cam.position.set(0, many ? 78 : 70, dist);
+      look = new THREE.Vector3(0, many ? 44 : 42, many ? 20 : 10);
+      sp = spots(n);
+    }
     cam.lookAt(look);
-
-    const sp = spots(n);
     const imgs = await Promise.all(players.map(p => loadImg(`https://mc-heads.net/skin/${encodeURIComponent(p.uuid || p.name || 'MHF_Steve')}`)));
     const fallback = await loadImg('https://mc-heads.net/skin/MHF_Steve');
     const figs = players.map((p, i) => {
@@ -226,9 +315,17 @@
       if (!img) return null;
       const f = player(img);
       const s = sp[i];
-      pose(f, s.pose);
-      f.position.set(s.x, s.y - (f.userData.drop || 0), s.z);
-      f.rotation.y = Math.atan2(cam.position.x - s.x, cam.position.z - s.z) * .6;  // leicht zur Kamera drehen
+      if (!s) return null;  // mehr Spieler als Plätze in der Szene
+      if (s.stand) {  // genau wie der Rüstungsständer
+        standPose(f, s.stand.pose || {});
+        f.position.set(s.x, s.y, s.z);
+        f.rotation.y = -s.stand.yaw * Math.PI / 180;
+        if (s.stand.small) f.scale.setScalar(.5);
+      } else {
+        pose(f, s.pose);
+        f.position.set(s.x, s.y - (f.userData.drop || 0), s.z);
+        f.rotation.y = Math.atan2(cam.position.x - s.x, cam.position.z - s.z) * .6;  // leicht zur Kamera drehen
+      }
       f.userData.base = f.position.y;
       f.visible = !!opts.instant;
       scene.add(f);
@@ -239,7 +336,10 @@
       l.querySelector('span').textContent = `${i + 1}. · ${p.value}×`;
       l.style.opacity = opts.instant ? 1 : 0;
       labels.appendChild(l);
-      return {f, l, i, sitting: s.pose === 'sit'};
+      const legs = s.stand && s.stand.pose ? [s.stand.pose.left_leg, s.stand.pose.right_leg] : [];
+      const sitting = s.pose === 'sit' || legs.some(l => l && l[0] <= -60);  // Rüstungsständer mit Beinen nach vorne = sitzt
+      if (sitting) l.classList.add('below');
+      return {f, l, i, sitting};
     });
 
     // Aufdecken: vom letzten Platz nach vorne, die Top 3 zum Schluss mit Pause
@@ -254,13 +354,15 @@
       const v = new THREE.Vector3();
       figs.forEach(o => {
         if (!o) return;
+        const sc = o.f.scale.y;
         if (o.sitting) v.set(o.f.position.x, o.f.position.y + 8, o.f.position.z + 10).project(cam);  // Name unter die Sitzenden
-        else v.set(o.f.position.x, o.f.position.y + 40, o.f.position.z).project(cam);
+        else v.set(o.f.position.x, o.f.position.y + 38 * sc, o.f.position.z).project(cam);
         o.l.style.left = ((v.x + 1) / 2 * Wd) + 'px';
         o.l.style.top = ((1 - v.y) / 2 * Ht) + 'px';
       });
     }
     function frame(now){
+      if (run.stop) { renderer.dispose(); return; }
       const t = now - start;
       figs.forEach(o => {
         if (!o) return;
@@ -271,10 +373,11 @@
         o.l.style.opacity = k >= 1 ? 1 : 0;
         if (k >= 1 && o.i === 0 && !o.cheered) { o.cheered = true; box.dispatchEvent(new CustomEvent('hvp-winner')); }
       });
-      // leichte Kamerafahrt
-      const a = Math.sin(t / 5200) * .06;
-      cam.position.x = Math.sin(a) * dist;
-      cam.lookAt(look);
+      if (dist) {  // leichte Kamerafahrt (nur in der eingebauten Welt)
+        const a = Math.sin(t / 5200) * .06;
+        cam.position.x = Math.sin(a) * dist;
+        cam.lookAt(look);
+      }
       place();
       renderer.render(scene, cam);
       if (!opts.still) requestAnimationFrame(frame);

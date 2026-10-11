@@ -74,6 +74,12 @@ public class GameEvents {
             Backpack.open(ctx.getSource().getPlayerOrException());
             return 1;
         }));
+        // /hvik szene [radius] - Siegerszene (Rüstungsständer + Blöcke + Blick) für hvik.org speichern
+        e.getDispatcher().register(net.minecraft.commands.Commands.literal("hvik").then(net.minecraft.commands.Commands.literal("szene")
+                .executes(ctx -> SceneExport.run(ctx.getSource().getPlayerOrException(), 32))
+                .then(net.minecraft.commands.Commands.argument("radius", com.mojang.brigadier.arguments.IntegerArgumentType.integer(8, 64))
+                        .executes(ctx -> SceneExport.run(ctx.getSource().getPlayerOrException(),
+                                com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "radius"))))));
     }
 
     /** Nach dem Tod (Softcore) den Rucksack behalten. */
