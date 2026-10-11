@@ -1,11 +1,16 @@
 package org.hvik.link;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.toasts.SystemToast;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationUiState;
-import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,6 +19,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 public class ClientEvents {
     private String shownWinner = "";
     private Screen lastCreate = null;
+    private boolean toastShown = false;
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent e) {
@@ -23,7 +29,15 @@ public class ClientEvents {
         if (mc.screen instanceof CreateWorldScreen cws && c.configured()) {
             if (cws != lastCreate) {  // Bildschirm neu geöffnet -> aktuelle Lobby-Einstellung holen
                 lastCreate = cws;
+                c.infoLoaded = false;
+                toastShown = false;
                 c.fetchInfo();
+            }
+            if (c.infoLoaded && !toastShown) {  // einmal als normale Minecraft-Benachrichtigung oben rechts
+                toastShown = true;
+                SystemToast.addOrUpdate(mc.getToasts(), SystemToast.SystemToastIds.PERIODIC_NOTIFICATION,
+                        Component.literal(c.hardcore ? "HviK Link: Hardcore-Lobby" : "HviK Link: Softcore-Lobby"),
+                        Component.literal(c.hardcore ? "Spielmodus ist auf Hardcore festgelegt." : "Hardcore ist in dieser Lobby gesperrt."));
             }
             if (c.infoLoaded) {  // Hardcore-Lobby: nur Hardcore. Softcore-Lobby: Hardcore gesperrt.
                 WorldCreationUiState ui = cws.getUiState();
@@ -44,36 +58,48 @@ public class ClientEvents {
         if (blocking && !(mc.screen instanceof LobbyScreen)) mc.setScreen(new LobbyScreen());
     }
 
-    @SubscribeEvent
-    public void onScreenRender(ScreenEvent.Render.Post e) {
-        LinkClient c = HvikLink.CLIENT;
-        if (!(e.getScreen() instanceof CreateWorldScreen) || !c.configured() || !c.infoLoaded) return;
-        String t = c.hardcore ? "☠ HviK Link: Hardcore-Lobby – nur Hardcore-Welten" : "❤ HviK Link: Softcore-Lobby – Hardcore ist gesperrt";
-        e.getGuiGraphics().drawString(Minecraft.getInstance().font, t, 6, 8, c.hardcore ? 0xFF5555 : 0x55FF55, true);
-    }
-
     public static void registerOverlay(RegisterGuiOverlaysEvent e) {
-        e.registerAboveAll("hviklink", (gui, graphics, partialTick, width, height) -> renderHud(graphics));
+        e.registerAboveAll("hviklink", (gui, graphics, partialTick, width, height) -> renderHud(graphics, width, height));
     }
 
-    private static void renderHud(GuiGraphics g) {
+    /** Rangliste rechts am Rand (wie die Scoreboard-Seitenleiste): Ziel, Spieler mit Fortschritt und Herzen. */
+    private static void renderHud(GuiGraphics g, int width, int height) {
         Minecraft mc = Minecraft.getInstance();
         LinkClient c = HvikLink.CLIENT;
         if (!c.active() || !"running".equals(c.status) || mc.options.hideGui) return;
-        int y = 4;
-        g.drawString(mc.font, "HviK Link", 4, y, 0xFFAA00, true);
-        y += 11;
-        if (!c.goalType.isEmpty()) {
-            g.drawString(mc.font, "⚑ Ziel: " + c.goalLabel, 4, y, 0xFFFF55, true);
-            y += 11;
-        }
-        for (LinkClient.Member m : c.members) {
+        Font f = mc.font;
+        boolean goal = !c.goalType.isEmpty();
+        List<LinkClient.Member> ms = new ArrayList<>(c.members);
+        if (goal) ms.sort(Comparator.comparingInt(LinkClient.Member::progress).reversed());
+        String title = c.hardcore ? "☠ HviK Link" : "HviK Link";
+        String goalLine = goal ? "⚑ " + c.goalLabel : null;
+        List<String[]> rows = new ArrayList<>();
+        for (LinkClient.Member m : ms) {
             String hearts = m.hp() < 0 ? "?" : String.format("%.1f", m.hp() / 2f);
-            String line = (m.dead() ? "☠ " : "") + m.name() + "  ❤ " + hearts + "/" + Math.round(m.max() / 2f)
-                    + (c.goalType.isEmpty() ? "" : "  ⚑ " + m.progress() + "/" + c.goalCount);
-            int color = m.dead() ? 0x888888 : (m.online() ? 0xFFFFFF : 0xAAAAAA);
-            g.drawString(mc.font, line, 4, y, color, true);
-            y += 10;
+            String right = (goal ? m.progress() + "/" + c.goalCount + "  " : "") + "❤" + hearts;
+            rows.add(new String[]{(m.dead() ? "☠ " : "") + m.name(), right});
+        }
+        int w = f.width(title);
+        if (goalLine != null) w = Math.max(w, f.width(goalLine));
+        for (String[] r : rows) w = Math.max(w, f.width(r[0]) + 10 + f.width(r[1]));
+        int lh = 9, lines = rows.size() + (goal ? 1 : 0);
+        int h = (lines + 1) * lh + 2;
+        int x2 = width - 2, x1 = x2 - w - 4;
+        int y = height / 2 - h / 3;
+        g.fill(x1, y, x2, y + lh + 1, 0x66000000);  // Kopfzeile etwas dunkler
+        g.fill(x1, y + lh + 1, x2, y + h, 0x4C000000);
+        g.drawString(f, title, x1 + (x2 - x1 - f.width(title)) / 2, y + 1, c.hardcore ? 0xFF5555 : 0xFFAA00, false);
+        int ly = y + lh + 2;
+        if (goalLine != null) {
+            g.drawString(f, goalLine, x1 + 2, ly, 0xFFFF55, false);
+            ly += lh;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            LinkClient.Member m = ms.get(i);
+            int color = m.dead() ? 0x777777 : (m.online() ? 0xFFFFFF : 0xAAAAAA);
+            g.drawString(f, rows.get(i)[0], x1 + 2, ly, color, false);
+            g.drawString(f, rows.get(i)[1], x2 - 2 - f.width(rows.get(i)[1]), ly, m.dead() ? 0x777777 : 0xFF5555, false);
+            ly += lh;
         }
     }
 }

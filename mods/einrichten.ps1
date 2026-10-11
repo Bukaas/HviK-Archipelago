@@ -11,8 +11,24 @@ $pack = Get-Content (Join-Path $here "pack.json") -Raw | ConvertFrom-Json
 $jar = Join-Path $here $pack.jar
 $suffix = " (HviK Link)"
 
-if (Get-Process -Name "CurseForge" -ErrorAction SilentlyContinue) {
-    Fail "Bitte CurseForge erst komplett schliessen (auch unten rechts im Infobereich) und nochmal starten."
+# CurseForge muss zu sein (sonst ueberschreibt es die Profile wieder) - wir schliessen es selbst und starten es am Ende neu
+$cfExe = $null
+$cf = @(Get-Process -Name "CurseForge" -ErrorAction SilentlyContinue)
+if ($cf) {
+    $cfExe = ($cf | Where-Object { $_.Path } | Select-Object -First 1).Path
+    Say "CurseForge wird kurz geschlossen ..."
+    foreach ($p in $cf) { try { [void]$p.CloseMainWindow() } catch {} }
+    for ($i = 0; $i -lt 16 -and (Get-Process -Name "CurseForge" -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 500 }
+    Get-Process -Name "CurseForge", "Curse.Agent.Host" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    if (Get-Process -Name "CurseForge" -ErrorAction SilentlyContinue) { Fail "CurseForge laesst sich nicht schliessen - bitte selbst beenden (auch unten rechts im Infobereich)." }
+    Ok "CurseForge geschlossen."
+}
+if (-not $cfExe) {
+    $cfExe = @(
+        (Join-Path $env:LOCALAPPDATA "Programs\CurseForge Windows\CurseForge.exe"),
+        (Join-Path $env:ProgramFiles "CurseForge Windows\CurseForge.exe")
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 
 # CurseForge-Profilordner suchen
@@ -103,7 +119,12 @@ Copy-Item $jar $mods -Force
 Copy-Item (Join-Path $here "hviklink.json") (Join-Path $config "hviklink.json") -Force
 Ok "Mod und Link-Daten eingetragen."
 
+if ($cfExe -and (Test-Path $cfExe)) {
+    Start-Process $cfExe
+    Ok "CurseForge wird wieder gestartet."
+}
+
 Write-Host ""
 Say "Fertig!" Green
-Say "CurseForge starten -> Profil '$dstName' spielen -> Welt laden (am besten eine NEUE Welt)."
+Say "In CurseForge -> Profil '$dstName' spielen -> Welt laden (am besten eine NEUE Welt)."
 Say "Dann erscheint die HviK-Link-Lobby: 'Bereit' klicken, der Host startet."
