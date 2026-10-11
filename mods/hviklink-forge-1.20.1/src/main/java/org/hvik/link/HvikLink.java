@@ -23,6 +23,7 @@ public class HvikLink {
             MinecraftForge.EVENT_BUS.register(new ClientEvents());
             FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientEvents::registerOverlay);
             FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientEvents::registerKeys);
+            FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientEvents::addLayers);
         });
     }
 }

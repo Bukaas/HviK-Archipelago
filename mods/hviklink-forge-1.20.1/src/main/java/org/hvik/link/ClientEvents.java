@@ -23,6 +23,8 @@ public class ClientEvents {
     public static final net.minecraft.client.KeyMapping BACKPACK = new net.minecraft.client.KeyMapping(
             "key.hviklink.backpack", org.lwjgl.glfw.GLFW.GLFW_KEY_B, "key.categories.hviklink");
     private int lastCountdown = 0;
+    public static final net.minecraft.client.KeyMapping EMOTES = new net.minecraft.client.KeyMapping(
+            "key.hviklink.emotes", org.lwjgl.glfw.GLFW.GLFW_KEY_N, "key.categories.hviklink");
     private long lastTick = -1;
     private Screen lastCreate = null;
     private boolean toastShown = false;
@@ -52,6 +54,10 @@ public class ClientEvents {
                 if (!c.hardcore && cur == WorldCreationUiState.SelectedGameMode.HARDCORE) ui.setGameMode(WorldCreationUiState.SelectedGameMode.SURVIVAL);
             }
             return;
+        }
+        if (mc.level != null && mc.player != null) {
+            Emotes.clientTick(mc);
+            while (EMOTES.consumeClick()) if (mc.screen == null) mc.setScreen(new EmoteScreen());
         }
         if (mc.level == null || mc.player == null || !c.configured() || !c.active()) return;
         if (c.afterChoice != null) {  // der Host hat entschieden
@@ -125,6 +131,25 @@ public class ClientEvents {
 
     public static void registerKeys(net.minecraftforge.client.event.RegisterKeyMappingsEvent e) {
         e.register(BACKPACK);
+        e.register(EMOTES);
+    }
+
+    /** Spielermodell durch das Emote-Modell ersetzen (gleiches Modell + Pose obendrauf). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void addLayers(net.minecraftforge.client.event.EntityRenderersEvent.AddLayers e) {
+        for (String skin : e.getSkins()) {
+            try {
+                net.minecraft.client.renderer.entity.LivingEntityRenderer r = e.getSkin(skin);
+                if (r == null) continue;
+                boolean slim = "slim".equals(skin);
+                EmoteModel m = new EmoteModel(e.getContext().bakeLayer(slim ? net.minecraft.client.model.geom.ModelLayers.PLAYER_SLIM
+                        : net.minecraft.client.model.geom.ModelLayers.PLAYER), slim);
+                net.minecraftforge.fml.util.ObfuscationReflectionHelper.setPrivateValue(
+                        net.minecraft.client.renderer.entity.LivingEntityRenderer.class, r, m, "f_115290_");
+            } catch (Exception ex) {
+                HvikLink.LOG.warn("HviK Link: Emote-Modell nicht gesetzt ({}): {}", skin, ex.toString());
+            }
+        }
     }
 
     public static void registerOverlay(RegisterGuiOverlaysEvent e) {

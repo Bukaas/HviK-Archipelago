@@ -62,6 +62,11 @@ public class GameEvents {
         if (c.active() && "running".equals(c.status)) c.send(LinkClient.ev("respawn"));
     }
 
+    @SubscribeEvent
+    public void onServerTick(TickEvent.ServerTickEvent e) {
+        if (e.phase == TickEvent.Phase.END && e.getServer().getTickCount() % 10 == 0) Emotes.cleanSeats(e.getServer());
+    }
+
     /** /backpack öffnet den Rucksack (wie Taste B). */
     @SubscribeEvent
     public void onCommands(net.minecraftforge.event.RegisterCommandsEvent e) {
