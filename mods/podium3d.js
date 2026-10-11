@@ -233,7 +233,11 @@
       scene.add(mesh);
     }
     // Plätze: Rüstungsständer mit Namen "1", "2", ... (ohne Zahl hinten anstellen)
-    const stands = (sc.stands || []).slice().sort((a, b) => (parseInt(a.name) || 999) - (parseInt(b.name) || 999));
+    // Plätze: Name "1", "2", ... - ohne Namen: höchster Ständer = Platz 1, dann nach Höhe, Sitzende zum Schluss
+    const sits = s => [s.pose && s.pose.left_leg, s.pose && s.pose.right_leg].some(l => l && l[0] <= -60);
+    const auto = s => (sits(s) ? 1000 : 0) - s.y;
+    const stands = (sc.stands || []).slice().sort((a, b) => ((parseInt(a.name) || 0) && (parseInt(b.name) || 0))
+      ? parseInt(a.name) - parseInt(b.name) : (parseInt(a.name) ? -1 : parseInt(b.name) ? 1 : auto(a) - auto(b)));
     const cam = sc.camera;
     return {stands, cam, size: [sx, sy, sz]};
   }
@@ -293,12 +297,25 @@
     let dist = many ? 300 : 260, sp, look, cam;
     const custom = opts.scene ? await sceneWorld(scene, opts.scene) : null;
     if (custom) {  // eure Szene: Kamera = Blick beim Export, Plätze = Rüstungsständer
-      cam = new THREE.PerspectiveCamera(55, Wd / Ht, 1, 4000);
+      cam = new THREE.PerspectiveCamera(58, Wd / Ht, 1, 4000);
       const c = custom.cam, yaw = c.yaw * Math.PI / 180, pitch = c.pitch * Math.PI / 180;
       cam.position.set(c.x * B, c.y * B, c.z * B);
       look = new THREE.Vector3(c.x * B - Math.sin(yaw) * Math.cos(pitch) * 100, c.y * B - Math.sin(pitch) * 100, c.z * B + Math.cos(yaw) * Math.cos(pitch) * 100);
       dist = 0;
       sp = custom.stands.slice(0, n).map(s => ({x: s.x * B, y: s.y * B, z: s.z * B, pose: 'stand', stand: s}));
+      // Kamera so weit zurück (Blickrichtung bleibt), bis alle Plätze samt Namen ins Bild passen - oben Platz für den Titel
+      cam.lookAt(look);
+      cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+      const dir = new THREE.Vector3().subVectors(look, cam.position).normalize(), v = new THREE.Vector3();
+      const fits = () => sp.every(s => [[0, 0], [0, 44]].every(([dx, dy]) => {
+        v.set(s.x + dx, s.y + dy, s.z).project(cam);
+        return v.z < 1 && Math.abs(v.x) < .86 && v.y < .62 && v.y > -.9;
+      }));
+      for (let k = 0; k < 30 && !fits(); k++) { cam.fov += 1; cam.updateProjectionMatrix(); }  // erst Weitwinkel (bis 85°)
+      for (let k = 0; k < 120 && !fits(); k++) {  // reicht das nicht: ein Stück zurück
+        cam.position.addScaledVector(dir, -4); look.addScaledVector(dir, -4);
+        cam.lookAt(look); cam.updateMatrixWorld();
+      }
       scene.fog = new THREE.Fog(0x8ab8ff, 700, 2600);
     } else {
       world(scene);
