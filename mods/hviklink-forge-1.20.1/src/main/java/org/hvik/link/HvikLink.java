@@ -22,6 +22,7 @@ public class HvikLink {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
             MinecraftForge.EVENT_BUS.register(new ClientEvents());
             FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientEvents::registerOverlay);
+            FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientEvents::registerKeys);
         });
     }
 }

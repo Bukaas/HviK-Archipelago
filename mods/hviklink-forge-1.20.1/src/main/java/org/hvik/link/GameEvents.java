@@ -46,6 +46,8 @@ public class GameEvents {
             c.start();
             JsonObject w = LinkClient.ev("world");
             w.addProperty("hardcore", c.worldHardcore);
+            w.addProperty("mc_name", sp.getGameProfile().getName());  // für Skins auf Podium/Website
+            w.addProperty("mc_uuid", sp.getUUID().toString());
             c.send(w);
         }
     }
@@ -58,6 +60,22 @@ public class GameEvents {
         lastFood = -1;
         LinkClient c = HvikLink.CLIENT;
         if (c.active() && "running".equals(c.status)) c.send(LinkClient.ev("respawn"));
+    }
+
+    /** /backpack öffnet den Rucksack (wie Taste B). */
+    @SubscribeEvent
+    public void onCommands(net.minecraftforge.event.RegisterCommandsEvent e) {
+        e.getDispatcher().register(net.minecraft.commands.Commands.literal("backpack").executes(ctx -> {
+            Backpack.open(ctx.getSource().getPlayerOrException());
+            return 1;
+        }));
+    }
+
+    /** Nach dem Tod (Softcore) den Rucksack behalten. */
+    @SubscribeEvent
+    public void onClone(PlayerEvent.Clone e) {
+        net.minecraft.nbt.CompoundTag old = e.getOriginal().getPersistentData();
+        if (old.contains(Backpack.KEY)) e.getEntity().getPersistentData().put(Backpack.KEY, old.getCompound(Backpack.KEY).copy());
     }
 
     @SubscribeEvent
@@ -193,10 +211,10 @@ public class GameEvents {
 
     private void checkGoal(ServerPlayer sp, LinkClient c) {
         int progress = switch (c.goalType) {
-            case "item" -> {
+            case "item", "most" -> {
                 ResourceLocation rl = ResourceLocation.tryParse(c.goalTarget);
                 Item item = rl == null ? null : ForgeRegistries.ITEMS.getValue(rl);
-                yield item == null ? 0 : sp.getInventory().countItem(item);
+                yield item == null ? 0 : sp.getInventory().countItem(item) + (c.backpack ? Backpack.count(sp, item) : 0);
             }
             case "advancements" -> Math.max(0, advancements(sp) - baseAdv);
             case "advancement" -> {  // ein bestimmtes Achievement
@@ -213,7 +231,7 @@ public class GameEvents {
             o.addProperty("value", progress);
             c.send(o);
         }
-        if (c.goalCount > 0 && progress >= c.goalCount) {
+        if (!"most".equals(c.goalType) && c.goalCount > 0 && progress >= c.goalCount) {
             goalSent = true;
             c.send(LinkClient.ev("goal"));
         }

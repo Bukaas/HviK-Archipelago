@@ -51,6 +51,13 @@ public final class LinkClient {
     public volatile Boolean worldHardcore = null;
     /** Season vorbei: Ergebnis-Zeilen vom Server; afterChoice = Wahl des Hosts (restart|continue|leave); detached = ohne Link weiter. */
     public volatile List<String> endLines = List.of();
+    /** Zeitlimit der Runde in Minuten (0 = keins); Podium für "Wer hat am meisten?" (sortiert, erst am Ende). */
+    public volatile int timeLimit = 0;
+    public volatile boolean backpack = false;
+    public volatile String goalItemName = "";
+    public volatile List<Podium> podium = List.of();
+
+    public record Podium(String name, String mcName, java.util.UUID uuid, int value) {}
     public volatile String afterChoice = null;
     public volatile boolean detached = false;
     public volatile List<Member> members = List.of();
@@ -98,6 +105,12 @@ public final class LinkClient {
     public int countdown() {
         long ms = startAtMs - System.currentTimeMillis();
         return "running".equals(status) && startAtMs > 0 && ms > 0 ? (int) Math.ceil(ms / 1000.0) : 0;
+    }
+
+    /** Restzeit in Sekunden bei Zeitlimit, sonst -1. */
+    public long remaining() {
+        if (timeLimit <= 0 || startAtMs <= 0) return -1;
+        return Math.max(0, (startAtMs + timeLimit * 60_000L - System.currentTimeMillis() + 999) / 1000);
     }
 
     /** Laufzeit der Runde in Sekunden (ab dem Ende des Countdowns). */
@@ -265,6 +278,23 @@ public final class LinkClient {
         goalTarget = goal != null && goal.has("target") ? goal.get("target").getAsString() : "";
         goalCount = goal != null && goal.has("count") ? goal.get("count").getAsInt() : 0;
         goalLabel = s.has("goal_label") && !s.get("goal_label").isJsonNull() ? s.get("goal_label").getAsString() : "";
+        timeLimit = set.has("time_limit") && !set.get("time_limit").isJsonNull() ? set.get("time_limit").getAsInt() : 0;
+        backpack = set.has("backpack") && !set.get("backpack").isJsonNull() && set.get("backpack").getAsBoolean();
+        goalItemName = s.has("goal_item_name") && !s.get("goal_item_name").isJsonNull() ? s.get("goal_item_name").getAsString() : "";
+        List<Podium> pod = new ArrayList<>();
+        if (s.has("podium") && s.get("podium").isJsonArray()) {
+            for (JsonElement e : s.getAsJsonArray("podium")) {
+                JsonObject p = e.getAsJsonObject();
+                java.util.UUID id = null;
+                try {
+                    if (p.has("mc_uuid") && !p.get("mc_uuid").isJsonNull()) id = java.util.UUID.fromString(p.get("mc_uuid").getAsString());
+                } catch (IllegalArgumentException ignored) {
+                }
+                pod.add(new Podium(p.get("name").getAsString(), p.has("mc_name") && !p.get("mc_name").isJsonNull() ? p.get("mc_name").getAsString() : p.get("name").getAsString(),
+                        id, p.get("value").getAsInt()));
+            }
+        }
+        podium = List.copyOf(pod);
         winner = s.has("winner") && !s.get("winner").isJsonNull() ? s.get("winner").getAsString() : "";
         List<String> lines = new ArrayList<>();
         if (s.has("end_lines") && s.get("end_lines").isJsonArray()) {
@@ -280,7 +310,7 @@ public final class LinkClient {
                     m.has("max") && !m.get("max").isJsonNull() ? m.get("max").getAsFloat() : 20,
                     m.has("food") && !m.get("food").isJsonNull() ? m.get("food").getAsInt() : -1,
                     m.get("dead").getAsBoolean(), m.get("host").getAsBoolean(),
-                    m.has("progress") && !m.get("progress").isJsonNull() ? m.get("progress").getAsInt() : 0);
+                    m.has("progress") && !m.get("progress").isJsonNull() ? m.get("progress").getAsInt() : -1);  // -1 = verdeckt
             list.add(mem);
             if (mem.name().equals(cfg.name)) meReady = mem.ready();
         }

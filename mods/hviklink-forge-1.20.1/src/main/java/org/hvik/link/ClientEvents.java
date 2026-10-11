@@ -20,6 +20,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 /** Client: Lobby-Fenster erzwingen, solange nicht gestartet; Anzeige der Mitspieler am Rand. */
 public class ClientEvents {
     private static boolean endShown = false;
+    public static final net.minecraft.client.KeyMapping BACKPACK = new net.minecraft.client.KeyMapping(
+            "key.hviklink.backpack", org.lwjgl.glfw.GLFW.GLFW_KEY_B, "key.categories.hviklink");
+    private int lastCountdown = 0;
+    private long lastTick = -1;
     private Screen lastCreate = null;
     private boolean toastShown = false;
 
@@ -64,6 +68,29 @@ public class ClientEvents {
             mc.setScreen(new EndScreen());
             return;
         }
+        while (BACKPACK.consumeClick()) {  // Rucksack: im Einzelspieler direkt auf dem eingebauten Server öffnen
+            var srv = mc.getSingleplayerServer();
+            java.util.UUID id = mc.player.getUUID();
+            if (!Backpack.enabled()) mc.player.displayClientMessage(Component.literal("🎒 Der Rucksack ist in dieser Runde nicht an."), true);
+            else if (srv != null) srv.execute(() -> {
+                net.minecraft.server.level.ServerPlayer sp = srv.getPlayerList().getPlayer(id);
+                if (sp != null) Backpack.open(sp);
+            });
+        }
+        int cd = c.countdown();  // Countdown vorbei -> großer Titel mit dem Ziel ("Wer hat am meisten von ...")
+        if (lastCountdown > 0 && cd == 0 && "running".equals(c.status) && !c.goalType.isEmpty()) {
+            boolean most = "most".equals(c.goalType);
+            mc.gui.setTimes(10, 70, 20);
+            mc.gui.setTitle(Component.literal(most ? "Wer hat am meisten von" : "Ziel"));
+            mc.gui.setSubtitle(Component.literal("§e" + (most && !c.goalItemName.isEmpty() ? c.goalItemName : c.goalLabel)));
+        }
+        lastCountdown = cd;
+        long rem = c.remaining();  // letzte 10 Sekunden: Tick-Ton
+        if ("running".equals(c.status) && rem >= 0 && rem <= 10 && rem != lastTick && c.countdown() == 0 && !c.detached) {
+            lastTick = rem;
+            if (rem > 0) mc.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                    net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HAT.value(), rem <= 3 ? 1.6f : 1.2f));
+        }
         boolean blocking = (!"running".equals(c.status) && !"ended".equals(c.status)) || c.countdown() > 0;
         if (blocking && !(mc.screen instanceof LobbyScreen)) mc.setScreen(new LobbyScreen());
     }
@@ -96,6 +123,10 @@ public class ClientEvents {
         else mc.setScreen(new TitleScreen());
     }
 
+    public static void registerKeys(net.minecraftforge.client.event.RegisterKeyMappingsEvent e) {
+        e.register(BACKPACK);
+    }
+
     public static void registerOverlay(RegisterGuiOverlaysEvent e) {
         e.registerAboveAll("hviklink", (gui, graphics, partialTick, width, height) -> renderHud(graphics, width, height));
     }
@@ -109,30 +140,49 @@ public class ClientEvents {
         boolean goal = !c.goalType.isEmpty();
         List<LinkClient.Member> ms = new ArrayList<>(c.members);
         if (goal) ms.sort(Comparator.comparingInt(LinkClient.Member::progress).reversed());
-        long t = c.elapsed();
+        long rem = c.remaining();
+        long t = rem >= 0 ? rem : c.elapsed();
         String clock = t >= 3600 ? String.format("%d:%02d:%02d", t / 3600, t / 60 % 60, t % 60) : String.format("%d:%02d", t / 60, t % 60);
-        String title = (c.hardcore ? "☠ HviK Link" : "HviK Link") + "  ⏱ " + clock;
-        String goalLine = goal ? "⚑ " + c.goalLabel : null;
+        String title = (c.hardcore ? "☠ HviK Link" : "HviK Link") + (rem >= 0 ? "  ⏳ " : "  ⏱ ") + clock;
+        boolean urgent = rem >= 0 && rem <= 60;
+        boolean most = "most".equals(c.goalType);
+        net.minecraft.world.item.ItemStack icon = net.minecraft.world.item.ItemStack.EMPTY;
+        if (goal && ("item".equals(c.goalType) || most) && !c.goalTarget.isEmpty()) {
+            net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(c.goalTarget);
+            net.minecraft.world.item.Item it = rl == null ? null : net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(rl);
+            if (it != null) icon = new net.minecraft.world.item.ItemStack(it);
+        }
+        int mine = c.members.stream().filter(m -> m.name().equals(c.myName())).mapToInt(LinkClient.Member::progress).findFirst().orElse(0);
+        String goalLine = goal ? (most ? (c.goalItemName.isEmpty() ? c.goalLabel : "Meiste " + c.goalItemName) + "  – du: " + Math.max(0, mine) + "×"
+                : "⚑ " + c.goalLabel) : null;
         List<String[]> rows = new ArrayList<>();
         for (LinkClient.Member m : ms) {
             String hearts = m.hp() < 0 ? "?" : String.format("%.1f", m.hp() / 2f);
-            String right = (goal ? m.progress() + "/" + c.goalCount + "  " : "") + "❤" + hearts;
+            String prog = m.progress() < 0 ? "?" : String.valueOf(m.progress());
+            String right = (goal ? ("most".equals(c.goalType) ? prog + "×" : prog + "/" + c.goalCount) + "  " : "") + "❤" + hearts;
             rows.add(new String[]{(m.dead() ? "☠ " : "") + m.name(), right});
         }
         int w = f.width(title);
-        if (goalLine != null) w = Math.max(w, f.width(goalLine));
+        int iconW = icon.isEmpty() ? 0 : 18;
+        if (goalLine != null) w = Math.max(w, f.width(goalLine) + iconW);
         for (String[] r : rows) w = Math.max(w, f.width(r[0]) + 10 + f.width(r[1]));
-        int lh = 9, lines = rows.size() + (goal ? 1 : 0);
+        int lh = 9, lines = rows.size() + (goal ? (iconW > 0 ? 2 : 1) : 0);
         int h = (lines + 1) * lh + 2;
         int x2 = width - 2, x1 = x2 - w - 4;
         int y = height / 2 - h / 3;
         g.fill(x1, y, x2, y + lh + 1, 0x66000000);  // Kopfzeile etwas dunkler
         g.fill(x1, y + lh + 1, x2, y + h, 0x4C000000);
-        g.drawString(f, title, x1 + (x2 - x1 - f.width(title)) / 2, y + 1, c.hardcore ? 0xFF5555 : 0xFFAA00, false);
+        g.drawString(f, title, x1 + (x2 - x1 - f.width(title)) / 2, y + 1, urgent ? 0xFF5555 : (c.hardcore ? 0xFF5555 : 0xFFAA00), false);
         int ly = y + lh + 2;
         if (goalLine != null) {
-            g.drawString(f, goalLine, x1 + 2, ly, 0xFFFF55, false);
-            ly += lh;
+            if (iconW > 0) {  // Item-Bild, damit man nicht vergisst, worum es geht
+                g.renderItem(icon, x1 + 1, ly);
+                g.drawString(f, goalLine, x1 + 1 + iconW, ly + 4, 0xFFFF55, false);
+                ly += lh * 2;
+            } else {
+                g.drawString(f, goalLine, x1 + 2, ly, 0xFFFF55, false);
+                ly += lh;
+            }
         }
         for (int i = 0; i < rows.size(); i++) {
             LinkClient.Member m = ms.get(i);
