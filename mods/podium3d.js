@@ -122,7 +122,17 @@
     const W = 64, H = img.height >= 64 ? 64 : 32, modern = H === 64;
     const c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(img, 0, 0);
     const ctx = c.getContext('2d');
-    const slim = modern && ctx.getImageData(54, 20, 1, 1).data[3] === 0;
+    const slim = modern && ctx.getImageData(54, 20, 1, 1).data[3] === 0;  // vor dem Deckend-Machen prüfen
+    const opaque = (x, y, w, h) => {
+      const d = ctx.getImageData(x, y, w, h);
+      for (let i = 3; i < d.data.length; i += 4) d.data[i] = 255;
+      ctx.putImageData(d, x, y);
+    };
+    const hatRegion = ctx.getImageData(32, 0, 32, 16);  // Hut-Ebene bleibt durchsichtig
+    opaque(0, 0, 32, 16);   // Kopf
+    opaque(0, 16, 64, 16);  // Körper, rechter Arm, rechtes Bein
+    if (modern) opaque(16, 48, 32, 16);  // linkes Bein, linker Arm (Grundebene)
+    ctx.putImageData(hatRegion, 32, 0);
     const hat = ctx.getImageData(32, 0, 32, 16).data;
     let hatClear = false;  // Minecraft blendet eine komplett deckende Hut-Ebene aus (alte Skins haben dort oft Schwarz)
     for (let i = 3; i < hat.length; i += 4) if (hat[i] < 128) { hatClear = true; break; }
@@ -355,7 +365,7 @@
       if (!s) return null;  // mehr Spieler als Plätze in der Szene
       if (s.stand) {  // wie der Rüstungsständer - Standardhaltung wird lebendiger
         f.position.set(s.x, s.y, s.z);
-        f.rotation.y = -s.stand.yaw * Math.PI / 180;
+        f.rotation.y = Math.atan2(cam.position.x - s.x, cam.position.z - s.z);  // alle schauen Richtung Kamera
         if (isDefaultPose(s.stand.pose)) {
           const pr = POSES[ORDER[i % ORDER.length]];
           const pose = {...DEFAULT_POSE, ...(s.stand.pose || {}), ...pr.pose};
@@ -363,8 +373,8 @@
             const w = sp[0], dx = w.x - s.x, dz = w.z - s.z;
             const rel = Math.atan2(dx, dz) - f.rotation.y;
             const deg = -((((rel * 180 / Math.PI) + 540) % 360) - 180);
-            pose.head = [pr.lookAt ? -25 : -8, Math.max(-60, Math.min(60, deg)), 0];
-            if (pr.point) pose.right_arm = [-100, Math.max(-60, Math.min(60, deg)), 0];
+            pose.head = [pr.lookAt ? -10 : -4, 0, 0];  // Kopf zur Kamera
+            if (pr.point) pose.right_arm = [-100, Math.max(-60, Math.min(60, deg)), 0];  // Arm zeigt auf den Sieger
           }
           standPose(f, pose);
           f.userData.anim = pr.anim || 'idle';
@@ -378,7 +388,7 @@
       } else {
         pose(f, s.pose);
         f.position.set(s.x, s.y - (f.userData.drop || 0), s.z);
-        f.rotation.y = Math.atan2(cam.position.x - s.x, cam.position.z - s.z) * .6;  // leicht zur Kamera drehen
+        f.rotation.y = Math.atan2(cam.position.x - s.x, cam.position.z - s.z);  // zur Kamera drehen
       }
       f.userData.base = f.position.y;
       f.visible = !!opts.instant;
@@ -430,7 +440,7 @@
       figs.forEach(o => {  // kleine Bewegungen: winken, jubeln, klatschen, umschauen
         if (!o || !o.f.userData.rest) return;
         const u = o.f.userData, [h0, r0, l0] = u.rest, s = t / 1000 + u.seed;
-        u.head.rotation.y = h0.y + Math.sin(s * .7) * .12;
+        u.head.rotation.y = h0.y + Math.sin(s * .7) * .06;
         u.head.rotation.x = h0.x + Math.sin(s * .45) * .04;
         if (u.anim === 'wave') u.rArm.rotation.z = r0.z - Math.sin(s * 6) * .35;
         if (u.anim === 'cheer') { u.rArm.rotation.z = r0.z + Math.abs(Math.sin(s * 3)) * .22; u.lArm.rotation.z = l0.z - Math.abs(Math.sin(s * 3)) * .22; }
