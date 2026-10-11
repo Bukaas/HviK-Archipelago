@@ -54,6 +54,7 @@ public final class LinkClient {
     /** Zeitlimit der Runde in Minuten (0 = keins); Podium für "Wer hat am meisten?" (sortiert, erst am Ende). */
     public volatile int timeLimit = 0;
     public volatile boolean backpack = false;
+    public volatile String onDeath = "backpack";  // keep | backpack | lose - was man beim Tod behält
     public volatile String goalItemName = "";
     public volatile List<Podium> podium = List.of();
 
@@ -280,6 +281,7 @@ public final class LinkClient {
         goalLabel = s.has("goal_label") && !s.get("goal_label").isJsonNull() ? s.get("goal_label").getAsString() : "";
         timeLimit = set.has("time_limit") && !set.get("time_limit").isJsonNull() ? set.get("time_limit").getAsInt() : 0;
         backpack = set.has("backpack") && !set.get("backpack").isJsonNull() && set.get("backpack").getAsBoolean();
+        onDeath = set.has("on_death") && !set.get("on_death").isJsonNull() ? set.get("on_death").getAsString() : "backpack";
         goalItemName = s.has("goal_item_name") && !s.get("goal_item_name").isJsonNull() ? s.get("goal_item_name").getAsString() : "";
         List<Podium> pod = new ArrayList<>();
         if (s.has("podium") && s.get("podium").isJsonArray()) {

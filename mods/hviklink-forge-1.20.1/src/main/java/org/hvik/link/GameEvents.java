@@ -16,6 +16,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.food.FoodData;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
+import net.minecraftforge.event.entity.living.LivingExperienceDropEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -82,11 +85,55 @@ public class GameEvents {
                                 com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "radius"))))));
     }
 
-    /** Nach dem Tod (Softcore) den Rucksack behalten. */
+    static final String KEEP = "hviklink_keep";
+
+    /** Was gilt beim Tod? Ohne laufende Runde wie immer: Inventar fällt, Rucksack bleibt. */
+    static String deathMode() {
+        LinkClient c = HvikLink.CLIENT;
+        return c.active() && "running".equals(c.status) && !c.detached ? c.onDeath : "vanilla";
+    }
+
+    /** "Alles behalten": Inventar + Level vor dem Fallenlassen sichern (nach Totem und anderen Mods). */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onDeathKeep(LivingDeathEvent e) {
+        if (e.isCanceled() || !(e.getEntity() instanceof ServerPlayer sp) || !"keep".equals(deathMode())) return;
+        net.minecraft.nbt.CompoundTag keep = new net.minecraft.nbt.CompoundTag();
+        keep.put("Inv", sp.getInventory().save(new net.minecraft.nbt.ListTag()));
+        keep.putInt("Lvl", sp.experienceLevel);
+        keep.putFloat("Prog", sp.experienceProgress);
+        keep.putInt("Total", sp.totalExperience);
+        sp.getPersistentData().put(KEEP, keep);
+        sp.getInventory().clearContent();
+    }
+
+    /** "Nur Rucksack" / "Alles verlieren": Inventar verschwindet statt auf dem Boden zu liegen. */
+    @SubscribeEvent
+    public void onDrops(LivingDropsEvent e) {
+        if (!(e.getEntity() instanceof ServerPlayer)) return;
+        String m = deathMode();
+        if ("backpack".equals(m) || "lose".equals(m)) e.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public void onXpDrop(LivingExperienceDropEvent e) {
+        if (e.getEntity() instanceof ServerPlayer && "keep".equals(deathMode())) e.setCanceled(true);
+    }
+
+    /** Nach dem Tod: Rucksack behalten (außer "Alles verlieren"), bei "Alles behalten" auch Inventar + Level. */
     @SubscribeEvent
     public void onClone(PlayerEvent.Clone e) {
         net.minecraft.nbt.CompoundTag old = e.getOriginal().getPersistentData();
-        if (old.contains(Backpack.KEY)) e.getEntity().getPersistentData().put(Backpack.KEY, old.getCompound(Backpack.KEY).copy());
+        boolean death = e.isWasDeath();
+        if (old.contains(Backpack.KEY) && !(death && "lose".equals(deathMode())))
+            e.getEntity().getPersistentData().put(Backpack.KEY, old.getCompound(Backpack.KEY).copy());
+        if (death && old.contains(KEEP) && e.getEntity() instanceof ServerPlayer sp) {
+            net.minecraft.nbt.CompoundTag keep = old.getCompound(KEEP);
+            sp.getInventory().load(keep.getList("Inv", net.minecraft.nbt.Tag.TAG_COMPOUND));
+            sp.experienceLevel = keep.getInt("Lvl");
+            sp.experienceProgress = keep.getFloat("Prog");
+            sp.totalExperience = keep.getInt("Total");
+            old.remove(KEEP);
+        }
     }
 
     @SubscribeEvent

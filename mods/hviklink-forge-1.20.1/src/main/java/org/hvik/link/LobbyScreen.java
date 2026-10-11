@@ -54,9 +54,24 @@ public class LobbyScreen extends Screen {
                         c.send(o);
                     }).bounds(cx - 204 + i * 102, y - 26, 100, 20).build());
                 }
+                String[] modes = {"keep", "backpack", "lose"};
+                int cur = java.util.Arrays.asList(modes).indexOf(c.onDeath);
+                addRenderableWidget(Button.builder(Component.literal("Beim Tod: " + deathLabel(c.onDeath)), b -> {
+                    JsonObject o = LinkClient.ev("settings");
+                    o.addProperty("on_death", modes[(Math.max(cur, 0) + 1) % modes.length]);
+                    c.send(o);
+                }).bounds(cx - 102, y - 50, 204, 20).build());
             }
         }
         addRenderableWidget(Button.builder(Component.literal("Welt verlassen"), b -> leave()).bounds(cx - 100, height - 30, 200, 20).build());
+    }
+
+    static String deathLabel(String m) {
+        return switch (m) {
+            case "keep" -> "Alles behalten";
+            case "lose" -> "Alles verlieren";
+            default -> "Nur Rucksack bleibt";
+        };
     }
 
     /** Lobby Hardcore, Welt Softcore (oder umgekehrt) -> diese Welt geht nicht. */
@@ -137,6 +152,7 @@ public class LobbyScreen extends Screen {
                     + (c.deathLink ? "– Death Link an" : "– Death Link aus");
             g.drawCenteredString(font, set, cx, y + 8, 0xAAAAAA);
             if (!c.goalType.isEmpty()) g.drawCenteredString(font, "⚑ Ziel: " + c.goalLabel + " – wer es zuerst schafft, gewinnt!", cx, y + 20, 0xFFFF55);
+            g.drawCenteredString(font, "Beim Tod: " + deathLabel(c.onDeath) + (c.backpack ? "" : "  (Rucksack ist aus)"), cx, y + (c.goalType.isEmpty() ? 20 : 32), 0xAAAAAA);
         }
         super.render(g, mouseX, mouseY, partialTick);
     }
